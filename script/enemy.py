@@ -25,7 +25,6 @@ class Bot_Wave_Spawner:
                     return True
                 else:
                     self.jeu.wave_ended = True
-                    print(f"Wave {self.jeu.wave} started !")
                     self.spawned = 0
                     return 3
             else:

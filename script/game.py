@@ -89,6 +89,8 @@ class Game:
         
         # Gérer les vagues d'ennemis
         self.wave = 0
+        print(f"Wave {self.wave} started !")
+        
         self.wave_ended = False
         self.bot_wave_spawner = enemy.Bot_Wave_Spawner(self)
         
@@ -144,8 +146,8 @@ class Game:
                         
                             elif self.mouse_selection[0] == "next_wave_button":
                                 self.wave_ended = False
-                                self.bot_wave_spawner.update()
                                 self.wave += 1
+                                self.bot_wave_spawner.update()
                                 print(f"Wave {self.wave} started !")
                                 
                     elif event.type == pg.KEYDOWN:
@@ -194,7 +196,7 @@ class Game:
             
             if not self.wave_ended and cond:
                 if self.bot_wave_spawner.update() == 3:
-                    self.wave_ended = False
+                    self.wave_ended = True
     
     def render_debug(self):
         for i in range(5):
@@ -333,11 +335,14 @@ class Game:
             
 
             # Met à jour l'affichage
+            cond = True
             for entity in self.game_entities_list:
                 entity.render(self.fenetre)
-                
+                if not entity.is_dead and isinstance(entity, enemy.Bot):
+                    cond = False
+            
 
-            if self.wave_ended:
+            if self.wave_ended and cond:
                 self.next_wave_button_render()
             
            
