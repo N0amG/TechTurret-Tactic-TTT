@@ -60,7 +60,7 @@ class Game:
                 self.matrice_bot[i][k] = (coord_x, coord_y)
         
         #test et placement des éléments    
-        self.game_entities_list.append(turret.Basic_Turret(self ,self.matrice_tourelle[0][0][1], self.matrice_tourelle[0][0][0]))
+        self.game_entities_list.append(turret.Laser_Turret(self ,self.matrice_tourelle[0][4][1], self.matrice_tourelle[0][4][0]))
         self.game_entities_list.append(enemy.Basic_Bot(self, self.matrice_bot[0][0][1], self.matrice_bot[0][0][0]))
         
         # Condition de victoire et de défaites

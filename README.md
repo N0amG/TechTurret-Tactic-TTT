@@ -9,6 +9,6 @@ Chaque tourelle coute un certain nombre d'argent
 
 ----------------
 
-Version 0.11-dev
+Version 0.2-dev
 
-Système de vagues corrigé
+tourelles laser ajoutés

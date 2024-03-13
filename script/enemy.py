@@ -2,6 +2,7 @@ import pygame as pg
 import time
 import turret
 import random as rd
+from math import log
 
 class Bot_Wave_Spawner:
     def __init__(self, jeu):
@@ -26,6 +27,7 @@ class Bot_Wave_Spawner:
                 else:
                     self.jeu.wave_ended = True
                     self.spawned = 0
+                    self.bot_quantity += 2
                     return 3
             else:
                 return 2
@@ -38,7 +40,7 @@ class Bot(pg.sprite.Sprite):
         self.entity_list = jeu.game_entities_list
         self.position = [x, y]
         self.vie = vie
-        self.point = round(((vie+degats+vitesse*1000+cadence)//4)/25)*25
+        self.point = round(((vie+degats+vitesse*1000+cadence)//4)/25)*25 # moyenne des stats arrondi a 25 près
         self.degats = degats
         self.vitesse = vitesse
         self.portee = portee
@@ -94,7 +96,7 @@ class Bot(pg.sprite.Sprite):
 
 class Basic_Bot(Bot):
     def __init__(self, jeu, x, y):
-        super().__init__(jeu, x, y, vie = 100, degats=10, vitesse= 0.05, portee = 0, cadence = 1, name="Basic_Bot")
+        super().__init__(jeu, x, y, vie = 100, degats=10, vitesse= 0.03, portee = 0, cadence = 1, name="Basic_Bot")
         self.image = pg.image.load("assets/images/enemy/basic_bot.png")
         coef = 2.5
         self.image = pg.transform.scale(self.image, (22*coef, 28*coef))

@@ -7,7 +7,10 @@ class Turret_selection:
         if name == "Turret":
             return Basic_Turret(jeu, x, y)
         
-        elif name == "":
+        elif name == "Laser Turret":
+            return Laser_Turret(jeu, x, y)
+        
+        else:
             return None
 
 
@@ -34,7 +37,10 @@ class Turret:
             return True
         else:
             return False
-    
+
+    def shoot(self):
+        pass
+        
     def render(self, fenetre):
         fenetre.blit(self.image, self.position)
         #hitbox
@@ -44,18 +50,16 @@ class Turret:
         pourcentage_vie = self.vie / 100
         
         # Calcul de la largeur de la barre verte en fonction du pourcentage de vie
-        largeur_barre_verte = self.rect.width * pourcentage_vie
-        
+        largeur_barre_verte = round(self.rect.width * pourcentage_vie)
+
         # Calcul de la position de départ de la barre rouge
         position_barre_rouge = (self.rect.x + largeur_barre_verte, self.rect.y)
-        
+
         # Dessin de la barre verte
-        pg.draw.rect(fenetre, (0, 255, 0), (self.rect.x, self.rect.y, largeur_barre_verte, 5))
-        
+        pg.draw.rect(fenetre, (0, 255, 0), (self.rect.x, self.rect.y, self.rect.width, 5))
+
         # Dessin de la barre rouge
         pg.draw.rect(fenetre, (255, 0, 0), (position_barre_rouge[0], position_barre_rouge[1], self.rect.width - largeur_barre_verte, 5))
-
-        
 class Projectile:
     def __init__(self, jeu, x, y, degats, vitesse, name):
         self.jeu = jeu
@@ -77,15 +81,14 @@ class Projectile:
             
     def is_colliding(self, cible : pg.rect):
         if self.rect.colliderect(cible): 
-            self.is_dead = True
             return True
         else: return False
 
     def render(self, fenetre):
         # Dessiner le rectangle sur la surface
         pg.draw.rect(self.jeu.fenetre, self.color, self.rect)
-
-
+        if isinstance(self, Laser_Projectile):
+            pg.draw.rect(self.jeu.fenetre, self.color2, self.rect2)
 
 class Basic_Turret(Turret):
     
@@ -122,11 +125,16 @@ class Basic_Projectile(Projectile):
         # Définir le rectangle
         self.rect = pg.Rect(self.position[0], self.position[1], 24, 12)  # x, y, largeur, hauteur
 
-        
+    def is_colliding(self, cible : pg.rect):
+        if self.rect.colliderect(cible): 
+            self.is_dead = True
+            return True
+        else: return False
+
 class Laser_Turret(Turret):
     
     def __init__(self, jeu, x, y):
-        super().__init__(jeu, x, y, vie = 125, degats= 40, portee=750, cadence=4, prix=150, name = "Tourelle_Laser")
+        super().__init__(jeu, x, y, vie = 125, degats= 0.03, portee=750, cadence=4, prix=200, name = "Tourelle_Laser")
         self.image = pg.image.load("assets/images/turrets/laser_turret.png")
         self.image = pg.transform.scale(self.image, (75, 100))
         self.position[0] = (self.position[0] - self.image.get_width()// 2) 
@@ -145,7 +153,7 @@ class Laser_Turret(Turret):
         if shoot:
             if time.time() - self.last_shot >= self.cadence:
                 self.last_shot = time.time()
-                return Laser_Projectile(jeu=self.jeu, x=self.position[0]+self.rect.width//2, y=self.position[1]+self.rect.height//2, degats=self.degats)
+                return Laser_Projectile(jeu=self.jeu, x=self.position[0]+self.rect.width, y=self.position[1]+self.rect.height//2 -5, degats=self.degats)
         return None
     
 class Laser_Projectile(Projectile): 
@@ -155,22 +163,34 @@ class Laser_Projectile(Projectile):
         # Définir la couleur en RGB
         self.color = (255, 0, 0)  
         # Définir le rectangle
-        self.rect = pg.Rect(self.position[0], self.position[1], 750, 15)  # x, y, largeur, hauteur
-        self.duree = 5
+        self.rect = pg.Rect(self.position[0], self.position[1]+2, 750, 16)  # x, y, largeur, hauteur
+        self.duree = 2
         self.last_time = time.time()
+        self.damage = False
+        self.height_substraction = 0
+
+        self.color2 = (255, 150, 0)
+        self.rect2 = pg.Rect(self.position[0], self.position[1]+6, 750, 8)  # x, y, largeur, hauteur
         
     def move(self):
-        for bot in self.jeu.game_entities_list:
-            if isinstance(bot, enemy.Bot):
-                if self.is_colliding(bot.rect):
-                    bot.get_damage(self.degats)
-       
-        #self.rect.height -= 0.1
-        if self.last_time - time.time() >= self.duree:
+        if self.damage == False:
+            for bot in self.jeu.game_entities_list:
+                if isinstance(bot, enemy.Bot):
+                    if self.is_colliding(bot.rect):
+                        bot.get_damage(self.degats)
+                        #self.damage = True
+        self.height_substraction += 1
+        
+        if self.height_substraction >= 60:
+            self.height_substraction = 0
+            self.rect.height -= 1
+            self.rect2.height -= 1
+            self.rect.y = self.position[1] + 2
+            self.rect2.y = self.position[1] + 6
+            print(self.rect.height)
+            
+        if time.time() - self.last_time >= self.duree:
             self.last_time = time.time()
             self.is_dead = True
     
     
-    def render(self, fenetre):
-        # Dessiner le rectangle sur la surface
-        pg.draw.rect(self.jeu.fenetre, self.color, self.rect)
