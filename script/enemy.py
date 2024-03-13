@@ -8,6 +8,7 @@ class Bot_Wave_Spawner:
     def __init__(self, jeu):
         self.jeu = jeu
         self.spawned = 0
+        self.id = 0
         self.spawn_rate = 5
         self.bot_quantity = 6
         self.last_spawn = time.time()
@@ -21,7 +22,8 @@ class Bot_Wave_Spawner:
                     # Choisissez une coordonnée aléatoire dans la ligne
                     x, y = rd.randint(0,len(self.jeu.matrice_bot)-1), rd.randint(0,len(self.jeu.matrice_bot[0])-1)
                     x, y = self.jeu.matrice_bot[x][y]
-                    self.jeu.game_entities_list.append(Basic_Bot(self.jeu, y, x))
+                    self.jeu.game_entities_list.append(Basic_Bot(self.jeu, y, x, self.id))
+                    self.id += 1
                     self.spawned += 1
                     return True
                 else:
@@ -34,8 +36,16 @@ class Bot_Wave_Spawner:
         else:
             return False
 
+        
+    def manual_spawn(self, y, x):
+        self.jeu.game_entities_list.append(Basic_Bot(self.jeu, y, x, self.id))
+        self.id += 1
+        self.spawned += 1
+            
+    
+    
 class Bot(pg.sprite.Sprite):
-    def __init__(self, jeu, x, y, vie, degats, vitesse, portee, cadence, name):
+    def __init__(self, jeu, x, y, id, vie, degats, vitesse, portee, cadence, name,):
         self.jeu = jeu
         self.entity_list = jeu.game_entities_list
         self.position = [x, y]
@@ -46,6 +56,7 @@ class Bot(pg.sprite.Sprite):
         self.portee = portee
         self.cadence = cadence
         self.name = name
+        self.id = id
         self.last_shot = time.time()-self.cadence
         
         self.is_dead = False
@@ -74,6 +85,9 @@ class Bot(pg.sprite.Sprite):
         else:
             return False
     
+    def __repr__(self):
+        return f"Bot id : {self.id}"
+    
     def render(self, fenetre):
         fenetre.blit(self.image, self.position)
         #hitbox
@@ -95,8 +109,8 @@ class Bot(pg.sprite.Sprite):
         pg.draw.rect(fenetre, (255, 0, 0), (position_barre_rouge[0], position_barre_rouge[1], self.rect.width - largeur_barre_verte, 5))
 
 class Basic_Bot(Bot):
-    def __init__(self, jeu, x, y):
-        super().__init__(jeu, x, y, vie = 100, degats=10, vitesse= 0.03, portee = 0, cadence = 1, name="Basic_Bot")
+    def __init__(self, jeu, x, y, id):
+        super().__init__(jeu, x, y, id, vie = 100, degats=10, vitesse= 0.03, portee = 0, cadence = 1, name="Basic_Bot")
         self.image = pg.image.load("assets/images/enemy/basic_bot.png")
         coef = 2.5
         self.image = pg.transform.scale(self.image, (22*coef, 28*coef))

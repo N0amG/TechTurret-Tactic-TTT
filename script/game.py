@@ -44,6 +44,10 @@ class Game:
         
         self.liste_tourelle = [("Turret", 100), ("Laser Turret", 200), ("Plasma Turret",350), ("BlackHole Turret", 500), ("", 0), ("", 0),("", 0)]
         
+        self.paused = False
+        
+        self.next_wave_button_render() # appel de la méthode pour créer les attribut
+        
         # Créer une boucle pour générer les coordonnées de chaque élément
         for i in range(5):
             
@@ -59,9 +63,6 @@ class Game:
                 coord_y = decalage_y + (k+10) * taille_colonne
                 self.matrice_bot[i][k] = (coord_x, coord_y)
         
-        #test et placement des éléments    
-        self.game_entities_list.append(turret.Laser_Turret(self ,self.matrice_tourelle[0][4][1], self.matrice_tourelle[0][4][0]))
-        self.game_entities_list.append(enemy.Basic_Bot(self, self.matrice_bot[0][0][1], self.matrice_bot[0][0][0]))
         
         # Condition de victoire et de défaites
         self.is_game_over = False
@@ -74,7 +75,7 @@ class Game:
         
         # Mise en place du shop
         # Kama = monnaie du jeu
-        self.kamas = 500
+        self.kamas = 50000000
         self.last_kama_time = time.time()
         self.kama_image = pg.image.load("assets/images/others/kama.png")
         
@@ -92,7 +93,11 @@ class Game:
         print(f"Wave {self.wave} started !")
         
         self.wave_ended = False
-        self.bot_wave_spawner = enemy.Bot_Wave_Spawner(self)
+        self.bot_wave_spawner = enemy.Bot_Wave_Spawner(jeu=self)
+        
+        #test et placement des éléments    
+        self.game_entities_list.append(turret.BlackHole_Turret(self ,self.matrice_tourelle[0][4][1], self.matrice_tourelle[0][4][0]))
+        self.bot_wave_spawner.manual_spawn(self.matrice_bot[0][0][1], self.matrice_bot[0][0][0])
         
     def run(self):
         # Boucle principale du jeu
@@ -150,19 +155,24 @@ class Game:
                                 self.bot_wave_spawner.update()
                                 print(f"Wave {self.wave} started !")
                                 
-                    elif event.type == pg.KEYDOWN:
-                        if event.key == pg.K_ESCAPE:
-                            self.is_game_over = True
-                            self.is_player_win = False
+                elif event.type == pg.KEYDOWN:
+                    if event.key == pg.K_ESCAPE:
+                        self.is_game_over = True
+                        self.is_player_win = False
+                    
+                    elif event.key == pg.K_LCTRL:  # Si la touche Ctrl gauche est pressée
+                        self.paused = not self.paused  # Inverse l'état de pause
+                        print("paused")
                             
 
 
             # Logique du jeu
 
             # Mise à jour du jeu
-            self.update()
-            
-            # Affichage du jeu
+            if not self.paused:
+                self.update()
+                
+                # Affichage du jeu
             self.render()
 
         # Quitter pg
@@ -221,6 +231,12 @@ class Game:
         text_rect = text.get_rect(center=(self.taille_fenetre[0] // 2, self.taille_fenetre[1] // 2 - 150))
         self.fenetre.blit(text, text_rect)
     
+    def render_pause(self):
+        font = pg.font.Font(None, 100)
+        text = font.render("Pause", True, (255, 255, 255))
+        text_rect = text.get_rect(center=(self.taille_fenetre[0] // 2, self.taille_fenetre[1] // 2 - 150))
+        self.fenetre.blit(text, text_rect)
+        
     def render_shop_interface(self):
         pg.draw.rect(self.fenetre, (68,95,144), (0, 0, self.largeur_interface, self.taille_fenetre[1]))
         
@@ -326,9 +342,14 @@ class Game:
         # Affichage du "Game Over"
         if self.is_game_over:
             self.render_game_over()
+
+            
         else:
             #self.render_debug()
             # Affichage de la monnaie
+                        
+            
+                
             self.update_kamas_display()
             self.fenetre.blit(self.kamas_surface, (self.largeur_interface // 2 + 200, 30))
             
@@ -345,7 +366,8 @@ class Game:
             if self.wave_ended and cond:
                 self.next_wave_button_render()
             
-           
+        if self.paused:
+            self.render_pause()
         # Mettre à jour l'affichage
         pg.display.flip()
 

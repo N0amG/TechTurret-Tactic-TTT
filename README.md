@@ -4,11 +4,13 @@ Objectif :
 
 Défendre sa base contre les robot en posant des tourelles au sol.
 
-Chaque tourelle coute un certain nombre d'argent
-
 
 ----------------
 
-Version 0.2-dev
+Version 0.3-dev
 
-tourelles laser ajoutés
+tourelles trou noir ajouté
+
+méthode de spawn manuel des bots
+
+methode __repr__ pour les bots
