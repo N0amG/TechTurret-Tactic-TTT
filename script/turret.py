@@ -13,6 +13,9 @@ class Turret_selection:
         
         elif name == "BlackHole Turret":
             return BlackHole_Turret(jeu, x, y)
+        
+        elif name == "Plasma Turret":
+            return Plasma_Turret(jeu, x, y)
         else:
             return None
 
@@ -31,6 +34,10 @@ class Turret:
         self.last_shot = time.time()-self.cadence
         
         self.is_dead = False
+
+        
+    def __str__(self):
+        return f"{self.name} : {self.vie} vie"
     
     def get_damage(self, degats):
         self.vie -= degats
@@ -92,7 +99,10 @@ class Projectile:
         pg.draw.rect(self.jeu.fenetre, self.color, self.rect)
         if isinstance(self, Laser_Projectile):
             pg.draw.rect(self.jeu.fenetre, self.color2, self.rect2)
-
+        
+        #dessiner la hitbox pour le debug
+        #pg.draw.rect(fenetre, (255,0,0), (self.rect.x, self.rect.y, self.rect.width, self.rect.height), 1)
+        
 class Basic_Turret(Turret):
     
     def __init__(self, jeu, x, y):
@@ -136,7 +146,7 @@ class Basic_Projectile(Projectile):
 class Laser_Turret(Turret):
     
     def __init__(self, jeu, x, y):
-        super().__init__(jeu, x, y, vie = 125, degats= 0.03, portee=750, cadence=4, prix=200, name = "Tourelle_Laser")
+        super().__init__(jeu, x, y, vie = 125, degats= 0.02, portee=750, cadence=4, prix=200, name = "Tourelle_Laser")
         self.image = pg.image.load("assets/images/turrets/laser_turret.png")
         self.image = pg.transform.scale(self.image, (75, 100))
         self.position[0] = (self.position[0] - self.image.get_width()// 2) 
@@ -193,10 +203,23 @@ class Laser_Projectile(Projectile):
             self.last_time = time.time()
             self.is_dead = True
 
+class Plasma_Turret(Turret):
+    def __init__(self, jeu, x, y):
+        super().__init__(jeu, x, y, vie = 250, degats= 0.02, portee=750, cadence=5, prix=350, name = "Tourelle_Laser")
+        self.image = pg.image.load("assets/images/turrets/plasma_turret.png")
+        self.image = pg.transform.scale(self.image, (75, 100))
+        self.position[0] = (self.position[0] - self.image.get_width()// 2) 
+        self.position[1] = (self.position[1] - self.image.get_height()// 2) 
+        self.rect = self.image.get_rect()
+        self.rect.x, self.rect.y = self.position[0], self.position[1]
+
+    def shoot(self):
+        pass
+
 class BlackHole_Turret(Turret):
     
     def __init__(self, jeu, x, y):
-        super().__init__(jeu, x, y, vie = 150, degats= 0.015, portee=1000, cadence=20, prix=300, name = "Tourelle_Laser")
+        super().__init__(jeu, x, y, vie = 350, degats= 0.03, portee=1000, cadence=20, prix=300, name = "Tourelle_Blackhole")
         self.image = pg.image.load("assets/images/turrets/blackHole_turret.png")
         self.image = pg.transform.scale(self.image, (75, 100))
         self.position[0] = (self.position[0] - self.image.get_width()// 2) 
@@ -219,7 +242,6 @@ class BlackHole_Turret(Turret):
                 return BlackHole_Projectile(jeu=self.jeu, x=self.position[0]+self.rect.width, y=self.position[1]+self.rect.height//2 -5, degats=self.degats)
         return None
 
-
 class BlackHole_Projectile(Projectile):
         
         def __init__(self, jeu, x, y, degats):
@@ -230,10 +252,11 @@ class BlackHole_Projectile(Projectile):
             self.range = 500            
             self.is_dead = False
             self.last_time = time.time()
-            self.duree = 10
+            self.duree = 5
             self.state = "projectile" # or "blackhole"
             self.image = pg.transform.scale(pg.image.load('assets/images/projectiles/blackhole_projectile.png'), (60, 60))
             self.target = self.find_shoot_spot()
+            self.attraction_force = 0.075
         
         def find_shoot_spot(self):
             self.bot_list = []
@@ -252,10 +275,13 @@ class BlackHole_Projectile(Projectile):
                 if self.target is not None:
                     if self.position[0] < self.target[0]:
                         self.position[0] += self.vitesse
-                        self.rect.x += self.vitesse       
+                        self.rect.x += self.vitesse
+                        self.rect.y = self.position[1]    
                     else:
                         self.state = "blackhole"
                         self.rect = self.image.get_rect()
+                        self.rect.x, self.rect.y = self.position[0], self.position[1]-30
+                        self.position[1] = self.rect.y
                         self.last_time = time.time()
                 
                 if self.position[0] > self.jeu.taille_fenetre[0]:
@@ -267,38 +293,33 @@ class BlackHole_Projectile(Projectile):
                 if time.time() - self.last_time >= self.duree:
                     self.last_time = time.time()
                     self.is_dead = True
+                    
                 
-                #print(self.bot_list)
-                
-                for entity in self.jeu.game_entities_list:
-                    diff = list(filter(lambda elt: elt not in self.jeu.game_entities_list, self.bot_list))
-                    if len(diff):
-                        print(diff)
-                        
-                    if isinstance(entity, enemy.Bot):
-                        if self.rect.colliderect((self.position[0], entity.position[1], entity.rect.width, entity.rect.height)):
-                            self.bot_list.append(entity)
-                            print("bot ajouté")
-                list(set(self.bot_list))
-                                
+                diff = list(filter(lambda elt: isinstance(elt, enemy.Bot),filter(lambda elt: elt not in self.bot_list, self.jeu.game_entities_list)))
+                if len(diff):
+                    for bot in diff:
+                        if self.rect.colliderect((self.position[0], bot.position[1], bot.rect.width, bot.rect.height)):
+                            self.bot_list.append(bot)
                 
                 for bot in self.bot_list:
                     if self.is_colliding(bot.rect):
                         bot.get_damage(self.degats)
-                        print("degat")
                     
                     if bot.position[0] <= self.position[0] + self.range and bot.position[0] >= self.position[0] - self.range:
                         if bot.position[0] > self.position[0]:
-                            bot.position[0] -= 0.04
+                            bot.position[0] -= self.attraction_force 
                         else:
-                            bot.position[0] += 0.04
-                        
-        
+                            bot.position[0] += self.attraction_force                 
         
         def render(self, fenetre):
-            # Dessiner le rectangle sur la surface
-            # Dessiner l'image sur la fenêtre
+            
+            # Dessiner la hitbox 
+            #pg.draw.rect(fenetre, (255, 0, 0), self.rect)
+            
+            # Dessiner l'image sur la fenêtre         
             if self.state == "blackhole":
                 fenetre.blit(self.image, (self.position[0], self.position[1]))
             else:
                 pg.draw.rect(self.jeu.fenetre, self.color, self.rect)
+                
+            

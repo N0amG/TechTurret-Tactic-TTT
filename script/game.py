@@ -100,6 +100,7 @@ class Game:
         self.bot_wave_spawner.manual_spawn(self.matrice_bot[0][0][1], self.matrice_bot[0][0][0])
         self.debug_bot_timer = time.time()
         
+        
     def run(self):
         # Boucle principale du jeu
         running = True
@@ -113,7 +114,7 @@ class Game:
                 elif event.type == pg.MOUSEBUTTONDOWN:
                     
                     self.mouse_detection()
-                    print(f"{self.previous_mouse_selection=}, {self.mouse_selection=}")
+                    #print(f"{self.previous_mouse_selection=}, {self.mouse_selection=}")
                     if event.button == 1:
                         if self.previous_mouse_selection is not None:
                             
@@ -187,7 +188,7 @@ class Game:
             # Réapparition manuel d'un bot pour débuger la tourelle BlackHole
             #---------------------------------------------
             if self.debug_bot_timer is not None:
-                if time.time() - self.debug_bot_timer >= 3 :
+                if time.time() - self.debug_bot_timer >= 5 :
                     self.bot_wave_spawner.manual_spawn(self.matrice_bot[0][0][1], self.matrice_bot[0][0][0])
                     self.debug_bot_timer = None
             #---------------------------------------------
