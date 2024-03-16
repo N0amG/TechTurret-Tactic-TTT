@@ -98,6 +98,7 @@ class Game:
         #test et placement des éléments    
         self.game_entities_list.append(turret.BlackHole_Turret(self ,self.matrice_tourelle[0][4][1], self.matrice_tourelle[0][4][0]))
         self.bot_wave_spawner.manual_spawn(self.matrice_bot[0][0][1], self.matrice_bot[0][0][0])
+        self.debug_bot_timer = time.time()
         
     def run(self):
         # Boucle principale du jeu
@@ -182,7 +183,15 @@ class Game:
         if not self.is_game_over:
             
             self.kama_loot()
-                                    
+            
+            # Réapparition manuel d'un bot pour débuger la tourelle BlackHole
+            #---------------------------------------------
+            if self.debug_bot_timer is not None:
+                if time.time() - self.debug_bot_timer >= 3 :
+                    self.bot_wave_spawner.manual_spawn(self.matrice_bot[0][0][1], self.matrice_bot[0][0][0])
+                    self.debug_bot_timer = None
+            #---------------------------------------------
+            
             cond = True
             for entity in self.game_entities_list:
                 if entity.is_dead:
@@ -207,7 +216,8 @@ class Game:
             if not self.wave_ended and cond:
                 if self.bot_wave_spawner.update() == 3:
                     self.wave_ended = True
-    
+
+            
     def render_debug(self):
         for i in range(5):
             for j in range(10):
