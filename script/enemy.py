@@ -59,8 +59,8 @@ class Bot(pg.sprite.Sprite):
         self.id = id
         self.last_shot = time.time()-self.cadence
         self.is_dead = False
-
-        print(self)
+        #print(self)
+        
     def move(self):
         for entity in self.entity_list:
             if isinstance(entity, turret.Turret) and self.rect.colliderect(entity.rect):
