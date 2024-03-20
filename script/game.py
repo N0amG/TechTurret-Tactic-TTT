@@ -12,7 +12,7 @@ class Game:
         pg.init()
         
         # Définir les FPS (images par seconde)
-        self.fps = 80
+        self.fps = 90
         self.clock = pg.time.Clock()
 
         # Charger l'image du fond d'écran
@@ -241,7 +241,7 @@ class Game:
         text = font.render("Game Over", True, (255, 0, 0))
         text_rect = text.get_rect(center=(self.taille_fenetre[0] // 2, self.taille_fenetre[1] // 2 - 150))
         self.fenetre.blit(text, text_rect)
-    
+
     def render_pause(self):
         font = pg.font.Font(None, 100)
         text = font.render("Pause", True, (255, 255, 255))

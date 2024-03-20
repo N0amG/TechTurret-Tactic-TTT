@@ -210,15 +210,16 @@ class Laser_Projectile(Projectile):
 class Plasma_Turret(Turret):
     
     def __init__(self, jeu, x, y):
-        super().__init__(jeu, x, y, vie = 250, degats= 0.2, portee=1050, cadence=0, prix=350, name = "Tourelle_Laser")
+        super().__init__(jeu, x, y, vie = 250, degats= 0.2, portee=1050, cadence=0, prix=350, name = "Tourelle_Plasma")
         self.image = pg.image.load("assets/images/turrets/plasma_turret.png")
         self.image = pg.transform.scale(self.image, (75, 100))
         self.position[0] = (self.position[0] - self.image.get_width()// 2) 
         self.position[1] = (self.position[1] - self.image.get_height()// 2) 
         self.rect = self.image.get_rect()
         self.rect.x, self.rect.y = self.position[0], self.position[1]
-        self.last_shot = time.time()
-
+        self.plasma_projectile = Plasma_Projectile(jeu=self.jeu, x=self.position[0]+self.rect.width, y=self.position[1]+self.rect.height//2 -5, degats=self.degats)
+        self.jeu.game_entities_list.append(self.plasma_projectile)
+    
     def shoot(self):
         shoot = False
         for entity in self.jeu.game_entities_list:
@@ -228,23 +229,22 @@ class Plasma_Turret(Turret):
                         shoot = True
                         break
         if shoot:
-            if time.time() - self.last_shot >= self.cadence:
-                self.last_shot = time.time()
-                return Plasma_Projectile(jeu=self.jeu, x=self.position[0]+self.rect.width, y=self.position[1]+self.rect.height//2 -5, degats=self.degats)
+            self.plasma_projectile.render(self.jeu.fenetre)
+            
+        else:
+            self.plasma_projectile.particles = []
+            
         return None
     
 class Plasma_Projectile(Projectile):
     def __init__(self, jeu, x, y, degats):
         super().__init__(jeu, x, y, degats, vitesse = 0, name="plasma_projectile")
-        self.color = (255, 0, 0)
         self.rect = pg.Rect(self.position[0], self.position[1], 75, 24)
-        self.damage = False
         self.dispersion = randint(-1, 1) / 2
         # [loc, velocity, timer]
         self.particles = []
         self.last_particle = time.time()
-        self.delais = 0.1
-        
+
     def circle_surf(self, radius, color):
         surf = pg.Surface((radius * 2, radius * 2))
         pg.draw.circle(surf, color, (radius, radius), radius)
@@ -253,23 +253,24 @@ class Plasma_Projectile(Projectile):
 
     def render(self, fenetre):
         
-        min_radius = 1 # Définissez ceci à la taille maximale que vous voulez pour vos particules
-        
-        if time.time() - self.last_particle >= self.delais:
+        if time.time() - self.last_particle >= 0.000:
             self.last_particle = time.time()
-            self.delais = random() 
-            self.particles.append([[self.position[0] + randint(0, 20), self.position[1]], [randint(1, 10)/randint(1, 5), 0], randint(3,7)])  # Initialise le rayon à 1
-            
+            self.particles.append([[self.position[0], self.position[1]], [3, randint(0, 15) / 10 - 1], randint(6, 11)])
+
         for particle in self.particles:
             particle[0][0] += particle[1][0]
-            particle[0][1] += particle[1][1] + self.dispersion
-            particle[2] -=  random() * 0.2  # Augmente le rayon jusqu'à max_radius
+            particle[0][1] += particle[1][1]
+            particle[2] -= 0.15
             pg.draw.circle(fenetre, (255, 255, 255), [int(particle[0][0]), int(particle[0][1])], int(particle[2]))
+
             radius = particle[2] * 2
             fenetre.blit(self.circle_surf(radius, (20, 20, 60)), (int(particle[0][0] - radius), int(particle[0][1] - radius)), special_flags=BLEND_RGB_ADD)
 
-            if particle[2]-2 < min_radius:
+            if particle[2] <= 0:
                 self.particles.remove(particle)
+            
+            
+
         
         
             
