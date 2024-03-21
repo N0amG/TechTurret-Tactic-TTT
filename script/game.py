@@ -12,7 +12,7 @@ class Game:
         pg.init()
         
         # Définir les FPS (images par seconde)
-        self.fps = 80
+        self.fps = 90
         self.clock = pg.time.Clock()
 
         # Charger l'image du fond d'écran
@@ -96,7 +96,7 @@ class Game:
         self.bot_wave_spawner = enemy.Bot_Wave_Spawner(jeu=self)
         
         #test et placement des éléments    
-        self.game_entities_list.append(turret.BlackHole_Turret(self ,self.matrice_tourelle[0][4][1], self.matrice_tourelle[0][4][0]))
+        self.game_entities_list.append(turret.Plasma_Turret(self ,self.matrice_tourelle[0][4][1], self.matrice_tourelle[0][4][0]))
         self.bot_wave_spawner.manual_spawn(self.matrice_bot[0][0][1], self.matrice_bot[0][0][0])
         self.debug_bot_timer = time.time()
         
@@ -241,7 +241,7 @@ class Game:
         text = font.render("Game Over", True, (255, 0, 0))
         text_rect = text.get_rect(center=(self.taille_fenetre[0] // 2, self.taille_fenetre[1] // 2 - 150))
         self.fenetre.blit(text, text_rect)
-    
+
     def render_pause(self):
         font = pg.font.Font(None, 100)
         text = font.render("Pause", True, (255, 255, 255))

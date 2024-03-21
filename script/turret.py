@@ -1,7 +1,9 @@
 import pygame as pg
 import time
 import enemy
-
+from random import randint, random
+from abc import ABC, abstractmethod
+from pygame import BLEND_RGB_ADD
 
 class Turret_selection:
     def __new__(cls, jeu, x, y, name):
@@ -26,6 +28,7 @@ class Turret:
         self.entity_list = jeu.game_entities_list
         self.position = [x, y]
         self.vie = vie
+        self.vie_max = vie
         self.degats = degats
         self.portee = portee
         self.cadence = cadence
@@ -47,17 +50,16 @@ class Turret:
         else:
             return False
 
+    @abstractmethod
     def shoot(self):
         pass
         
     def render(self, fenetre):
         fenetre.blit(self.image, self.position)
-        #hitbox
-        #pg.draw.rect(fenetre, (255,0,0), (self.rect.x, self.rect.y, self.rect.width, self.rect.height), 1)
 
         # Calcul du pourcentage de vie
-        pourcentage_vie = self.vie / 100
-        
+        pourcentage_vie = self.vie / self.vie_max  # Utilisez la vie maximale de la tourelle pour calculer le pourcentage de vie
+
         # Calcul de la largeur de la barre verte en fonction du pourcentage de vie
         largeur_barre_verte = round(self.rect.width * pourcentage_vie)
 
@@ -65,7 +67,7 @@ class Turret:
         position_barre_rouge = (self.rect.x + largeur_barre_verte, self.rect.y)
 
         # Dessin de la barre verte
-        pg.draw.rect(fenetre, (0, 255, 0), (self.rect.x, self.rect.y, self.rect.width, 5))
+        pg.draw.rect(fenetre, (0, 255, 0), (self.rect.x, self.rect.y, largeur_barre_verte, 5))  # Utilisez la largeur de la barre verte pour le troisième argument
 
         # Dessin de la barre rouge
         pg.draw.rect(fenetre, (255, 0, 0), (position_barre_rouge[0], position_barre_rouge[1], self.rect.width - largeur_barre_verte, 5))
@@ -102,11 +104,13 @@ class Projectile:
         
         #dessiner la hitbox pour le debug
         #pg.draw.rect(fenetre, (255,0,0), (self.rect.x, self.rect.y, self.rect.width, self.rect.height), 1)
-        
+
+
+
 class Basic_Turret(Turret):
     
     def __init__(self, jeu, x, y):
-        super().__init__(jeu, x, y, vie = 100, degats =20, portee=750, cadence=2, prix=100, name = "Tourelle")
+        super().__init__(jeu, x, y, vie = 200, degats =20, portee=750, cadence=2, prix=100, name = "Tourelle")
         self.image = pg.image.load("assets/images/turrets/basic_turret.png")
         self.image = pg.transform.scale(self.image, (75, 100))
         self.position[0] = (self.position[0] - self.image.get_width()// 2) 
@@ -142,6 +146,7 @@ class Basic_Projectile(Projectile):
             self.is_dead = True
             return True
         else: return False
+
 
 class Laser_Turret(Turret):
     
@@ -203,23 +208,99 @@ class Laser_Projectile(Projectile):
             self.last_time = time.time()
             self.is_dead = True
 
+
 class Plasma_Turret(Turret):
+    
     def __init__(self, jeu, x, y):
-        super().__init__(jeu, x, y, vie = 250, degats= 0.02, portee=750, cadence=5, prix=350, name = "Tourelle_Laser")
+        super().__init__(jeu, x, y, vie = 100, degats= 0.15, portee=210, cadence=0, prix=350, name = "Tourelle_Plasma")
         self.image = pg.image.load("assets/images/turrets/plasma_turret.png")
         self.image = pg.transform.scale(self.image, (75, 100))
         self.position[0] = (self.position[0] - self.image.get_width()// 2) 
         self.position[1] = (self.position[1] - self.image.get_height()// 2) 
         self.rect = self.image.get_rect()
         self.rect.x, self.rect.y = self.position[0], self.position[1]
-
+        self.plasma_projectile = Plasma_Projectile(jeu=self.jeu, tourelle = self, x=self.position[0]+self.rect.width+2, y=self.position[1]+self.rect.height//2, degats=self.degats)
+        self.jeu.game_entities_list.append(self.plasma_projectile)
+    
     def shoot(self):
-        pass
+        shoot = False
+        for entity in self.jeu.game_entities_list:
+            if isinstance(entity, enemy.Bot):
+                if entity is not None:
+                    if entity.position[0] <= self.position[0] + self.portee and self.rect.colliderect((self.position[0], entity.position[1], entity.rect.width, entity.rect.height)):
+                        shoot = True
+                        break
+        if shoot:
+            self.plasma_projectile.state = "active"
+            
+        else:
+            self.plasma_projectile.state = "unactive"
+            self.plasma_projectile.particles = []
+            
+        return None
+    
+class Plasma_Projectile(Projectile):
+    def __init__(self, jeu, tourelle, x, y, degats):
+        super().__init__(jeu, x, y, degats, vitesse = 0, name="plasma_projectile")
+        self.rect = pg.Rect(self.position[0], self.position[1]-10, 135, 24)
+        self.dispersion = randint(-1, 1) / 2
+        # [loc, velocity, timer]
+        self.particles = []
+        self.last_particle = time.time()
+        self.tourelle = tourelle
+        self.cible_x = 0
+        self.state = "unactive" or "active"
+        
+    def circle_surf(self, radius, color):
+        surf = pg.Surface((radius * 2, radius * 2))
+        pg.draw.circle(surf, color, (radius, radius), radius)
+        surf.set_colorkey((0, 0, 0))
+        return surf
 
+    def render_debug(self, fenetre):
+        pg.draw.rect(fenetre, (255, 0, 0), self.rect)
+    
+    def render(self, fenetre):
+        if self.tourelle not in self.jeu.game_entities_list:
+            self.is_dead = True
+            self.jeu.game_entities_list.remove(self)
+            return
+        
+        #self.render_debug(fenetre)
+        
+        if self.state == "active":
+            self.particles.append([[self.position[0], self.position[1]], [2, randint(0, 10) / 12 - 0.5], randint(6, 9)])
+
+            for particle in self.particles:
+                particle[0][0] += particle[1][0]
+                particle[0][1] += particle[1][1]
+                particle[2] -= 0.1
+                pg.draw.circle(fenetre, (255, 255, 255), [int(particle[0][0]), int(particle[0][1])], int(particle[2]))
+
+                radius = particle[2] * 2
+                fenetre.blit(self.circle_surf(radius, (20, 20, 60)), (int(particle[0][0] - radius), int(particle[0][1] - radius)), special_flags=BLEND_RGB_ADD)
+
+                if particle[2] <= 0 or particle[0][0] >= self.cible_x:
+                    self.particles.remove(particle)
+                   
+    def move(self):
+        if self.state == "active":
+            for bot in self.jeu.game_entities_list:
+                if isinstance(bot, enemy.Bot):
+                    if self.is_colliding(bot.rect):
+                        distance = ((bot.position[0] - self.position[0])**2 + (bot.position[1] - self.position[1])**2)**0.5
+                        degat =  max(0, (self.tourelle.portee - distance) / self.tourelle.portee) * self.degats  # Les dégâts augmentent lorsque l'ennemi se rapproche
+                        self.cible_x = bot.position[0]
+                        return bot.get_damage(degat)
+
+            if self.position[0] > self.jeu.taille_fenetre[0]:
+                self.is_dead = True        
+
+                
 class BlackHole_Turret(Turret):
     
     def __init__(self, jeu, x, y):
-        super().__init__(jeu, x, y, vie = 350, degats= 0.03, portee=1000, cadence=20, prix=300, name = "Tourelle_Blackhole")
+        super().__init__(jeu, x, y, vie = 300, degats= 0.03, portee=1000, cadence=20, prix=300, name = "Tourelle_Blackhole")
         self.image = pg.image.load("assets/images/turrets/blackHole_turret.png")
         self.image = pg.transform.scale(self.image, (75, 100))
         self.position[0] = (self.position[0] - self.image.get_width()// 2) 
@@ -321,5 +402,5 @@ class BlackHole_Projectile(Projectile):
                 fenetre.blit(self.image, (self.position[0], self.position[1]))
             else:
                 pg.draw.rect(self.jeu.fenetre, self.color, self.rect)
-                
-            
+
+
