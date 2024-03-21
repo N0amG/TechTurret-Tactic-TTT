@@ -2,9 +2,13 @@ TechTurret Tactic - TTT
 
 ---------------
 
-Version 0.5.1-dev
+Version 0.5-dev
 
-dev des tourelles antimatière
+omni tourelles ajoutés
+
+méthode de spawn manuel des bots
+
+methode __str__ pour les bots et les tourelles
 
 ----------------
 
