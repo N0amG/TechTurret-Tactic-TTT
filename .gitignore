@@ -1,2 +1,3 @@
+/.gitignore
 script/__pycache__/turret.cpython-311.pyc
 script/__pycache__/enemy.cpython-311.pyc
