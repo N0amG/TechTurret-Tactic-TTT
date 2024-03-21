@@ -2,9 +2,9 @@ TechTurret Tactic - TTT
 
 ---------------
 
-Version 0.4.5-dev
+Version 0.5-dev
 
-Bouclier ajouté
+Omni tourelle ajouté
 
 ----------------
 
