@@ -2,9 +2,9 @@ TechTurret Tactic - TTT
 
 ---------------
 
-Version 0.5-dev
+Version 0.5.1-dev
 
-Omni tourelle ajouté
+dev des tourelles antimatière
 
 ----------------
 

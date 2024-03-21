@@ -42,7 +42,7 @@ class Game:
         decalage_x = 160
         decalage_y = 295 + self.largeur_interface
         
-        self.liste_tourelle = [("Turret", 100), ("Laser Turret", 200), ("Shield", 250), ("Plasma Turret",350), ("Omni Turret", 450), ("BlackHole Turret", 500),("", 0)]
+        self.liste_tourelle = [("Turret", 100), ("Laser Turret", 200), ("Shield", 250), ("Plasma Turret",350), ("Omni Turret", 450), ("BlackHole Turret", 500),("AntiMatter Turret", 750)]
         
         self.paused = False
         
@@ -96,8 +96,8 @@ class Game:
         self.bot_wave_spawner = enemy.Bot_Wave_Spawner(jeu=self)
         
         #test et placement des éléments    
-        self.game_entities_list.append(turret.Omni_Turret(self ,self.matrice_tourelle[0][4][1], self.matrice_tourelle[0][4][0]))
-        self.bot_wave_spawner.manual_spawn(self.matrice_bot[0][0][1], self.matrice_bot[0][0][0])
+        self.game_entities_list.append(turret.AntiMatter_Turret(self ,self.matrice_tourelle[2][4][1], self.matrice_tourelle[2][4][0]))
+        self.bot_wave_spawner.manual_spawn(self.matrice_bot[2][0][1], self.matrice_bot[2][0][0])
         self.debug_bot_timer = time.time()
         
         
@@ -357,15 +357,11 @@ class Game:
             
         else:
             #self.render_debug()
-            # Affichage de la monnaie
-                        
             
-                
+            # Affichage de la monnaie            
             self.update_kamas_display()
             self.fenetre.blit(self.kamas_surface, (self.largeur_interface // 2 + 200, 30))
             
-            
-
             # Met à jour l'affichage
             cond = True
             for entity in self.game_entities_list:
