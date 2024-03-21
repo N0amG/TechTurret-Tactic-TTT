@@ -210,14 +210,14 @@ class Laser_Projectile(Projectile):
 class Plasma_Turret(Turret):
     
     def __init__(self, jeu, x, y):
-        super().__init__(jeu, x, y, vie = 250, degats= 0.2, portee=1050, cadence=0, prix=350, name = "Tourelle_Plasma")
+        super().__init__(jeu, x, y, vie = 250, degats= 0.15, portee=210, cadence=0, prix=350, name = "Tourelle_Plasma")
         self.image = pg.image.load("assets/images/turrets/plasma_turret.png")
         self.image = pg.transform.scale(self.image, (75, 100))
         self.position[0] = (self.position[0] - self.image.get_width()// 2) 
         self.position[1] = (self.position[1] - self.image.get_height()// 2) 
         self.rect = self.image.get_rect()
         self.rect.x, self.rect.y = self.position[0], self.position[1]
-        self.plasma_projectile = Plasma_Projectile(jeu=self.jeu, x=self.position[0]+self.rect.width, y=self.position[1]+self.rect.height//2 -5, degats=self.degats)
+        self.plasma_projectile = Plasma_Projectile(jeu=self.jeu, tourelle = self, x=self.position[0]+self.rect.width, y=self.position[1]+self.rect.height//2, degats=self.degats)
         self.jeu.game_entities_list.append(self.plasma_projectile)
     
     def shoot(self):
@@ -229,45 +229,57 @@ class Plasma_Turret(Turret):
                         shoot = True
                         break
         if shoot:
-            self.plasma_projectile.render(self.jeu.fenetre)
+            self.plasma_projectile.state = "active"
             
         else:
+            self.plasma_projectile.state = "unactive"
             self.plasma_projectile.particles = []
             
         return None
     
 class Plasma_Projectile(Projectile):
-    def __init__(self, jeu, x, y, degats):
+    def __init__(self, jeu, tourelle, x, y, degats):
         super().__init__(jeu, x, y, degats, vitesse = 0, name="plasma_projectile")
-        self.rect = pg.Rect(self.position[0], self.position[1], 75, 24)
+        self.rect = pg.Rect(self.position[0], self.position[1]-10, 135, 24)
         self.dispersion = randint(-1, 1) / 2
         # [loc, velocity, timer]
         self.particles = []
         self.last_particle = time.time()
-
+        self.tourelle = tourelle
+        self.state = "unactive" or "active"
+        
     def circle_surf(self, radius, color):
         surf = pg.Surface((radius * 2, radius * 2))
         pg.draw.circle(surf, color, (radius, radius), radius)
         surf.set_colorkey((0, 0, 0))
         return surf
 
+    
+    def render_debug(self, fenetre):
+        pg.draw.rect(fenetre, (255, 0, 0), self.rect)
+    
     def render(self, fenetre):
+        if self.tourelle not in self.jeu.game_entities_list:
+            self.is_dead = True
+            self.jeu.game_entities_list.remove(self)
+            return
         
-        if time.time() - self.last_particle >= 0.000:
-            self.last_particle = time.time()
-            self.particles.append([[self.position[0], self.position[1]], [3, randint(0, 15) / 10 - 1], randint(6, 11)])
+        self.render_debug(fenetre)
+        
+        if self.state == "active":
+            self.particles.append([[self.position[0], self.position[1]], [2, randint(0, 10) / 12 - 0.5], randint(6, 9)])
 
-        for particle in self.particles:
-            particle[0][0] += particle[1][0]
-            particle[0][1] += particle[1][1]
-            particle[2] -= 0.15
-            pg.draw.circle(fenetre, (255, 255, 255), [int(particle[0][0]), int(particle[0][1])], int(particle[2]))
+            for particle in self.particles:
+                particle[0][0] += particle[1][0]
+                particle[0][1] += particle[1][1]
+                particle[2] -= 0.1
+                pg.draw.circle(fenetre, (255, 255, 255), [int(particle[0][0]), int(particle[0][1])], int(particle[2]))
 
-            radius = particle[2] * 2
-            fenetre.blit(self.circle_surf(radius, (20, 20, 60)), (int(particle[0][0] - radius), int(particle[0][1] - radius)), special_flags=BLEND_RGB_ADD)
+                radius = particle[2] * 2
+                fenetre.blit(self.circle_surf(radius, (20, 20, 60)), (int(particle[0][0] - radius), int(particle[0][1] - radius)), special_flags=BLEND_RGB_ADD)
 
-            if particle[2] <= 0:
-                self.particles.remove(particle)
+                if particle[2] <= 0:
+                    self.particles.remove(particle)
             
             
 
