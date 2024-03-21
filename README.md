@@ -2,9 +2,9 @@ TechTurret Tactic - TTT
 
 ---------------
 
-Version 0.4-dev
+Version 0.4.5-dev
 
-tourelles a plasma ajouté
+Bouclier ajouté
 
 ----------------
 

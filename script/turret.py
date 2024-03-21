@@ -18,8 +18,12 @@ class Turret_selection:
         
         elif name == "Plasma Turret":
             return Plasma_Turret(jeu, x, y)
+        
+        elif name == "Shield":
+            return Shield(jeu, x, y)
         else:
             return None
+
 
 class Turret:
     def __init__(self, jeu, x, y, vie, degats, portee, cadence, prix, name):
@@ -404,3 +408,15 @@ class BlackHole_Projectile(Projectile):
                 pg.draw.rect(self.jeu.fenetre, self.color, self.rect)
 
 
+class Shield(Turret):
+    
+    def __init__(self, jeu, x, y):
+        super().__init__(jeu, x, y, vie = 500, degats= 0, portee=0, cadence=0, prix=250, name = "Bouclier")
+        self.image = pg.image.load("assets/images/turrets/shield.png")
+        self.image = pg.transform.scale(self.image, (75, 100))
+        self.position[0] = (self.position[0] - self.image.get_width()// 2) 
+        self.position[1] = (self.position[1] - self.image.get_height()// 2) 
+        self.rect = self.image.get_rect()
+        self.rect.x, self.rect.y = self.position[0], self.position[1]
+    
+    

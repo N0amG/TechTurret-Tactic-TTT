@@ -42,7 +42,7 @@ class Game:
         decalage_x = 160
         decalage_y = 295 + self.largeur_interface
         
-        self.liste_tourelle = [("Turret", 100), ("Laser Turret", 200), ("Plasma Turret",350), ("BlackHole Turret", 500), ("", 0), ("", 0),("", 0)]
+        self.liste_tourelle = [("Turret", 100), ("Laser Turret", 200), ("Shield", 250), ("Plasma Turret",350), ("BlackHole Turret", 500), ("", 0),("", 0)]
         
         self.paused = False
         
