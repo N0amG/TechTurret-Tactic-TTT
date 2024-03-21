@@ -2,13 +2,9 @@ TechTurret Tactic - TTT
 
 ---------------
 
-Version 0.3-dev
+Version 0.4-dev
 
-tourelles trou noir ajouté
-
-méthode de spawn manuel des bots
-
-methode __str__ pour les bots et les tourelles
+tourelles a plasma ajouté
 
 ----------------
 
