@@ -504,7 +504,7 @@ class Omni_Projectile(Projectile):
 class AntiMatter_Turret(Turret):
         
         def __init__(self, jeu, x, y):
-            super().__init__(jeu, x, y, vie = 200, degats= 50, portee=500, cadence=10, prix=500, name = "Tourelle_AntiMatter")
+            super().__init__(jeu, x, y, vie = 200, degats= 50, portee=1000, cadence=10, prix=500, name = "Tourelle_AntiMatter")
             self.image = pg.image.load("assets/images/turrets/antimatter_turret.png")
             self.image = pg.transform.scale(self.image, (75, 100))
             self.position[0] = (self.position[0] - self.image.get_width()// 2) 
@@ -551,16 +551,22 @@ class AntiMatter_Projectile(Projectile):
         def trajectory(self, x):
             b = x * 0.5
             a = self.target[0]
-            return (b / self.f(a/2)) * self.f(x)
+            return (b / self.f(a/2)) * self.f( self.jeu.taille_fenetre[0] - x)
         
         def derive(self, x):
+            a = self.target[0]
             return -2*x + a
         
+        def derive_trajectory(self, x):
+            a = self.target[0]
+            b = x * 0.5
+            return (b / self.f(a/2)) * self.derive( self.jeu.taille_fenetre[0] - x) * -1
+                
         def move(self):
             if self.state == "projectile":
                 if self.position[0] < self.target[0]:
                     self.position[0] += self.vitesse
-                    self.position[1] = self.trajectory(self.position[0])
+                    self.position[1] = self.jeu.taille_fenetre[1] - self.trajectory(self.position[0])
                     self.liste_points.append([self.position[0], self.position[1]])
                     self.rect.x = self.position[0]
                 else:
@@ -576,6 +582,9 @@ class AntiMatter_Projectile(Projectile):
 
         
         def render(self, fenetre):
-            fenetre.blit(self.image, (self.position[0], self.position[1]))
+            angle = self.derive_trajectory(self.position[0])
+            print("angle", angle)
+            rotated_image = pg.transform.rotate(self.image, angle)
+            fenetre.blit(rotated_image, (self.position[0], self.position[1]))
             for point in self.liste_points:
                 pg.draw.circle(fenetre, (255, 0, 0), point, 2)
