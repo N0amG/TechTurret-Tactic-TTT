@@ -517,11 +517,10 @@ class AntiMatter_Turret(Turret):
             shoot = False
             for entity in reversed(self.jeu.game_entities_list):
                 if isinstance(entity, enemy.Bot):
-                    if entity is not None:
-                        if entity.position[0] <= self.position[0] + self.portee and self.rect.colliderect((self.position[0], entity.position[1], entity.rect.width, entity.rect.height)):
-                            shoot = True
-                            self.cible = entity
-                            break
+                    if entity.position[0] <= self.position[0] + self.portee and self.rect.colliderect((self.position[0], entity.position[1], entity.rect.width, entity.rect.height)):
+                        shoot = True
+                        self.cible = entity
+                        break
             if shoot:
                 if time.time() - self.last_shot >= self.cadence:
                     self.last_shot = time.time()
@@ -533,25 +532,25 @@ class AntiMatter_Projectile(Projectile):
         def __init__(self, jeu, cible, x, y, degats):
             super().__init__(jeu, x, y, degats, vitesse = 1, name="antimatter_projectile")
             self.color = (0, 0, 0)  
-            self.last_time = time.time()
             self.range = 500            
             self.is_dead = False
-            self.last_time = time.time()
             self.duree = 5
             self.state = "projectile" # or "explosion"
             self.image = pg.transform.scale(pg.image.load('assets/images/projectiles/antimatter_projectile.png'), (60, 60))
             self.rect = self.image.get_rect()
+            self.rect.y = y-20
+            self.xdepart = x
             self.target = cible.position
             self.liste_points = []
         
         def f(self, x):
             a = self.target[0]
-            return -x**2 + x*a
+            return -x**2 + x * a + x * self.xdepart - self.xdepart * a
         
         def trajectory(self, x):
-            b = x * 0.5
+            b = x /2
             a = self.target[0]
-            return (b / self.f(a/2)) * self.f( self.jeu.taille_fenetre[0] - x)
+            return (b / self.f(a/2)) * self.f(x) + self.rect.height//2
         
         def derive(self, x):
             a = self.target[0]
@@ -559,9 +558,9 @@ class AntiMatter_Projectile(Projectile):
         
         def derive_trajectory(self, x):
             a = self.target[0]
-            b = x * 0.5
-            return (b / self.f(a/2)) * self.derive( self.jeu.taille_fenetre[0] - x) * -1
-                
+            b = x /2
+            return -b/2
+
         def move(self):
             if self.state == "projectile":
                 if self.position[0] < self.target[0]:
@@ -571,9 +570,6 @@ class AntiMatter_Projectile(Projectile):
                     self.rect.x = self.position[0]
                 else:
                     self.state = "explosion"
-                    self.rect = self.image.get_rect()
-                    self.rect.x, self.rect.y = self.position[0], self.position[1]-30
-                    self.position[1] = self.rect.y
                     self.last_time = time.time()
                 
                 if self.position[0] > self.jeu.taille_fenetre[0]:
@@ -582,9 +578,18 @@ class AntiMatter_Projectile(Projectile):
 
         
         def render(self, fenetre):
-            angle = self.derive_trajectory(self.position[0])
-            print("angle", angle)
+            angle = self.derive_trajectory(self.position[0]) - 110
+            #print("angle", angle)
             rotated_image = pg.transform.rotate(self.image, angle)
             fenetre.blit(rotated_image, (self.position[0], self.position[1]))
             for point in self.liste_points:
                 pg.draw.circle(fenetre, (255, 0, 0), point, 2)
+            #afficher la hitbox
+            pg.draw.rect(fenetre, (255,0,0), (self.rect.x, self.rect.y, self.rect.width, self.rect.height), 1)
+
+
+
+if __name__ == "__main__":
+    import game
+    jeu = game.Game()
+    jeu.run()
