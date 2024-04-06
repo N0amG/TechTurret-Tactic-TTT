@@ -357,15 +357,11 @@ class Game:
             
         else:
             #self.render_debug()
-            # Affichage de la monnaie
-                        
             
-                
+            # Affichage de la monnaie            
             self.update_kamas_display()
             self.fenetre.blit(self.kamas_surface, (self.largeur_interface // 2 + 200, 30))
             
-            
-
             # Met à jour l'affichage
             cond = True
             for entity in self.game_entities_list:

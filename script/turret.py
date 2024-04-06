@@ -524,12 +524,12 @@ class AntiMatter_Turret(Turret):
             if shoot:
                 if time.time() - self.last_shot >= self.cadence:
                     self.last_shot = time.time()
-                    return AntiMatter_Projectile(jeu=self.jeu,cible = entity, x=self.position[0]+self.rect.width, y=self.position[1]+self.rect.height//2 -5, degats=self.degats)
+                    return AntiMatter_Projectile(jeu=self.jeu,cible = entity, x=self.position[0]+self.rect.width, y=self.position[1]+self.rect.height//2 -5, tourelle = self, degats=self.degats)
             return None
 
 class AntiMatter_Projectile(Projectile):
             
-        def __init__(self, jeu, cible, x, y, degats):
+        def __init__(self, jeu, cible, x, y, tourelle, degats):
             super().__init__(jeu, x, y, degats, vitesse = 1, name="antimatter_projectile")
             self.color = (0, 0, 0)  
             self.range = 500            
@@ -539,17 +539,18 @@ class AntiMatter_Projectile(Projectile):
             self.image = pg.transform.scale(pg.image.load('assets/images/projectiles/antimatter_projectile.png'), (60, 60))
             self.rect = self.image.get_rect()
             self.rect.y = y-20
-            self.xdepart = x
-            self.target = cible.position
+            self.tourelle = tourelle
+            self.target = cible.position[:]
             self.liste_points = []
         
         def f(self, x):
             a = self.target[0]
-            return -x**2 + x * a + x * self.xdepart - self.xdepart * a
+            return -x**2 + x * a + x * self.tourelle.position[0] - self.tourelle.position[0] * a
         
         def trajectory(self, x):
-            b = x /2
+            b = self.tourelle.position[1] - 100
             a = self.target[0]
+            print(a)
             return (b / self.f(a/2)) * self.f(x) + self.rect.height//2
         
         def derive(self, x):
@@ -565,7 +566,7 @@ class AntiMatter_Projectile(Projectile):
             if self.state == "projectile":
                 if self.position[0] < self.target[0]:
                     self.position[0] += self.vitesse
-                    self.position[1] = self.jeu.taille_fenetre[1] - self.trajectory(self.position[0])
+                    self.position[1] = self.jeu.taille_fenetre[1] - self.trajectory(self.position[0]) - self.tourelle.position[1]
                     self.liste_points.append([self.position[0], self.position[1]])
                     self.rect.x = self.position[0]
                 else:
