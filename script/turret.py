@@ -492,3 +492,7 @@ class Omni_Projectile(Projectile):
         angle = math.degrees(math.atan2(self.vy, self.vx)) 
         fenetre.blit(pg.transform.rotate(self.image, -angle), (self.position[0], self.position[1]))
             
+if __name__ == "__main__":
+    import game
+    jeu = game.Game()
+    jeu.run()

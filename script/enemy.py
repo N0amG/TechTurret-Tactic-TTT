@@ -119,3 +119,10 @@ class Basic_Bot(Bot):
         self.position[1] = (self.position[1] - self.image.get_height()// 2) 
         self.rect = self.image.get_rect()
         self.rect.x, self.rect.y = self.position[0], self.position[1]
+
+
+            
+if __name__ == "__main__":
+    import game
+    jeu = game.Game()
+    jeu.run()
