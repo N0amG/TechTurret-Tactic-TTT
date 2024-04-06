@@ -96,7 +96,7 @@ class Game:
         self.bot_wave_spawner = enemy.Bot_Wave_Spawner(jeu=self)
         
         #test et placement des éléments    
-        self.game_entities_list.append(turret.AntiMatter_Turret(self ,self.matrice_tourelle[2][4][1], self.matrice_tourelle[2][4][0]))
+        self.game_entities_list.append(turret.Omni_Turret(self ,self.matrice_tourelle[2][4][1], self.matrice_tourelle[2][4][0]))
         self.bot_wave_spawner.manual_spawn(self.matrice_bot[2][0][1], self.matrice_bot[2][0][0])
         self.debug_bot_timer = time.time()
         
