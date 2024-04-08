@@ -123,7 +123,7 @@ class Basic_Turret(Turret):
     
     def __init__(self, jeu, x, y):
         super().__init__(jeu, x, y, vie = 200, degats =20, portee=750, cadence=2, prix=100, name = "Tourelle")
-        self.image = pg.image.load("assets/images/turrets/basic_turret.png")
+        self.image = pg.image.load("assets/images/turrets/basic_turret.png").convert_alpha()
         self.image = pg.transform.scale(self.image, (75, 100))
         self.position[0] = (self.position[0] - self.image.get_width()// 2) 
         self.position[1] = (self.position[1] - self.image.get_height()// 2) 
@@ -164,7 +164,7 @@ class Laser_Turret(Turret):
     
     def __init__(self, jeu, x, y):
         super().__init__(jeu, x, y, vie = 125, degats= 0.02, portee=750, cadence=4, prix=200, name = "Tourelle_Laser")
-        self.image = pg.image.load("assets/images/turrets/laser_turret.png")
+        self.image = pg.image.load("assets/images/turrets/laser_turret.png").convert_alpha()
         self.image = pg.transform.scale(self.image, (75, 100))
         self.position[0] = (self.position[0] - self.image.get_width()// 2) 
         self.position[1] = (self.position[1] - self.image.get_height()// 2) 
@@ -225,7 +225,7 @@ class Plasma_Turret(Turret):
     
     def __init__(self, jeu, x, y):
         super().__init__(jeu, x, y, vie = 100, degats= 0.15, portee=210, cadence=0, prix=350, name = "Tourelle_Plasma")
-        self.image = pg.image.load("assets/images/turrets/plasma_turret.png")
+        self.image = pg.image.load("assets/images/turrets/plasma_turret.png").convert_alpha()
         self.image = pg.transform.scale(self.image, (75, 100))
         self.position[0] = (self.position[0] - self.image.get_width()// 2) 
         self.position[1] = (self.position[1] - self.image.get_height()// 2) 
@@ -313,7 +313,7 @@ class BlackHole_Turret(Turret):
     
     def __init__(self, jeu, x, y):
         super().__init__(jeu, x, y, vie = 300, degats= 0.03, portee=1000, cadence=20, prix=300, name = "Tourelle_Blackhole")
-        self.image = pg.image.load("assets/images/turrets/blackHole_turret.png")
+        self.image = pg.image.load("assets/images/turrets/blackHole_turret.png").convert_alpha()
         self.image = pg.transform.scale(self.image, (75, 100))
         self.position[0] = (self.position[0] - self.image.get_width()// 2) 
         self.position[1] = (self.position[1] - self.image.get_height()// 2) 
@@ -347,7 +347,7 @@ class BlackHole_Projectile(Projectile):
             self.last_time = time.time()
             self.duree = 5
             self.state = "projectile" # or "blackhole"
-            self.image = pg.transform.scale(pg.image.load('assets/images/projectiles/blackhole_projectile.png'), (60, 60))
+            self.image = pg.transform.scale(pg.image.load('assets/images/projectiles/blackhole_projectile.png'), (60, 60)).convert_alpha()
             self.target = self.find_shoot_spot()
             self.attraction_force = 0.075
         
@@ -420,7 +420,7 @@ class Shield(Turret):
     
     def __init__(self, jeu, x, y):
         super().__init__(jeu, x, y, vie = 500, degats= 0, portee=0, cadence=0, prix=250, name = "Bouclier")
-        self.image = pg.image.load("assets/images/turrets/shield.png")
+        self.image = pg.image.load("assets/images/turrets/shield.png").convert_alpha()
         self.image = pg.transform.scale(self.image, (75, 100))
         self.position[0] = (self.position[0] - self.image.get_width()// 2) 
         self.position[1] = (self.position[1] - self.image.get_height()// 2) 
@@ -431,7 +431,7 @@ class Shield(Turret):
 class Omni_Turret(Turret):
         def __init__(self, jeu, x, y):
             super().__init__(jeu, x, y, vie = 200, degats= 5, portee="inf", cadence=0.5, prix=450, name = "Tourelle_Omni")
-            self.image = pg.image.load("assets/images/turrets/omni_turret.png")
+            self.image = pg.image.load("assets/images/turrets/omni_turret.png").convert_alpha()
             self.image = pg.transform.scale(self.image, (75, 100))
             self.position[0] = (self.position[0] - self.image.get_width()// 2) 
             self.position[1] = (self.position[1] - self.image.get_height()// 2) 
@@ -456,7 +456,7 @@ class Omni_Projectile(Projectile):
     
     def __init__(self, jeu, x, y, degats, cible):
         super().__init__(jeu, x, y, degats, vitesse = 2, name="omni_projectile")
-        self.image = pg.image.load("assets/images/projectiles/omni_projectile.png")
+        self.image = pg.image.load("assets/images/projectiles/omni_projectile.png").convert_alpha()
         self.image = pg.transform.scale(self.image, (20*3, 5*3))
         self.rect = self.image.get_rect()
         self.cible = cible
@@ -505,7 +505,7 @@ class AntiMatter_Turret(Turret):
         
         def __init__(self, jeu, x, y):
             super().__init__(jeu, x, y, vie = 200, degats= 50, portee=1000, cadence=10, prix=500, name = "Tourelle_AntiMatter")
-            self.image = pg.image.load("assets/images/turrets/antimatter_turret.png")
+            self.image = pg.image.load("assets/images/turrets/antimatter_turret.png").convert_alpha()
             self.image = pg.transform.scale(self.image, (75, 100))
             self.position[0] = (self.position[0] - self.image.get_width()// 2) 
             self.position[1] = (self.position[1] - self.image.get_height()// 2) 
@@ -536,7 +536,7 @@ class AntiMatter_Projectile(Projectile):
             self.is_dead = False
             self.duree = 5
             self.state = "projectile" # or "explosion"
-            self.image = pg.transform.scale(pg.image.load('assets/images/projectiles/antimatter_projectile.png'), (60, 60))
+            self.image = pg.transform.scale(pg.image.load('assets/images/projectiles/antimatter_projectile.png'), (60, 60)).convert_alpha()
             self.rect = self.image.get_rect()
             self.rect.y = y-20
             self.tourelle = tourelle
@@ -550,7 +550,7 @@ class AntiMatter_Projectile(Projectile):
         def trajectory(self, x):
             b = self.tourelle.position[1] - 100
             a = self.target[0]
-            print(a)
+            #print(a)
             return (b / self.f(a/2)) * self.f(x) + self.rect.height//2
         
         def derive(self, x):

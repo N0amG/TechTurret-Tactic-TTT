@@ -96,9 +96,11 @@ class Game:
         self.bot_wave_spawner = enemy.Bot_Wave_Spawner(jeu=self)
         
         #test et placement des éléments    
-        self.game_entities_list.append(turret.AntiMatter_Turret(self ,self.matrice_tourelle[2][4][1], self.matrice_tourelle[2][4][0]))
+        #self.game_entities_list.append(turret.AntiMatter_Turret(self ,self.matrice_tourelle[2][4][1], self.matrice_tourelle[2][4][0]))
+        self.game_entities_list.append(turret.Basic_Turret(self ,self.matrice_tourelle[2][4][1], self.matrice_tourelle[2][4][0]))
+        self.game_entities_list.append(enemy.Drone_Bot(self, self.matrice_bot[0][0][1], self.matrice_bot[0][0][0], 1))
         self.bot_wave_spawner.manual_spawn(self.matrice_bot[2][0][1], self.matrice_bot[2][0][0])
-        self.debug_bot_timer = time.time()
+        #self.debug_bot_timer = time.time()
         
         
     def run(self):
@@ -185,14 +187,14 @@ class Game:
             
             self.kama_loot()
             
-            # Réapparition manuel d'un bot pour débuger la tourelle BlackHole
+            '''# Réapparition manuel d'un bot pour débuger la tourelle BlackHole
             #---------------------------------------------
             if self.debug_bot_timer is not None:
                 if time.time() - self.debug_bot_timer >= 5 :
                     self.bot_wave_spawner.manual_spawn(self.matrice_bot[0][0][1], self.matrice_bot[0][0][0])
                     self.debug_bot_timer = None
             #---------------------------------------------
-            
+            '''
             cond = True
             for entity in self.game_entities_list:
                 if entity.is_dead:
