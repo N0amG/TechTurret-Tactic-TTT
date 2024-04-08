@@ -2,9 +2,11 @@ TechTurret Tactic - TTT
 
 ---------------
 
-Version 0.5.1-dev
+Version 0.5.2-dev
 
 dev des tourelles antimatière
+
+ajouts des drones + classe animation
 
 ----------------
 
