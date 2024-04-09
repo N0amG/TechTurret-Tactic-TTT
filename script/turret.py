@@ -69,6 +69,8 @@ class Turret:
     def render(self, fenetre):
         fenetre.blit(self.image, self.position)
 
+        if self.vie == self.vie_max:
+            return
         # Calcul du pourcentage de vie
         pourcentage_vie = self.vie / self.vie_max  # Utilisez la vie maximale de la tourelle pour calculer le pourcentage de vie
 
@@ -122,7 +124,7 @@ class Projectile:
 class Basic_Turret(Turret):
     
     def __init__(self, jeu, x, y):
-        super().__init__(jeu, x, y, vie = 200, degats =20, portee=750, cadence=2, prix=100, name = "Tourelle")
+        super().__init__(jeu, x, y, vie = 200, degats =20, portee=750, cadence=5, prix=100, name = "Tourelle")
         self.image = pg.image.load("assets/images/turrets/basic_turret.png").convert_alpha()
         self.image = pg.transform.scale(self.image, (75, 100))
         self.position[0] = (self.position[0] - self.image.get_width()// 2) 

@@ -25,7 +25,7 @@ class Bot_Wave_Spawner:
                     # Choisissez une coordonnée aléatoire dans la ligne
                     x, y = rd.randint(0,len(self.jeu.matrice_bot)-1), rd.randint(0,len(self.jeu.matrice_bot[0])-1)
                     x, y = self.jeu.matrice_bot[x][y]
-                    #self.jeu.game_entities_list.append(Basic_Bot(self.jeu, y, x, self.id))
+                    self.jeu.game_entities_list.append(Basic_Bot(self.jeu, y, x, self.id))
                     self.id += 1
                     self.spawned += 1
                     return True
@@ -116,6 +116,10 @@ class Bot(pg.sprite.Sprite):
         
         fenetre.blit(self.image, self.position)
 
+        
+        if self.vie == self.vie_max:
+            return
+        
         # Calcul du pourcentage de vie
         pourcentage_vie = self.vie / self.vie_max  # Utilisez la vie maximale de la tourelle pour calculer le pourcentage de vie
 
@@ -136,7 +140,7 @@ import pygame as pg
 
 class Basic_Bot(Bot):
     def __init__(self, jeu, x, y, id):
-        super().__init__(jeu, x, y, id, vie = 100, degats=25, vitesse= 0.1, portee = 0, cadence = 1, path ="enemy/basic_bot_frames/frame_", name="Basic_Bot", fps=70)
+        super().__init__(jeu, x, y, id, vie = 100, degats=20, vitesse= 0.05, portee = 0, cadence = 2, path ="enemy/basic_bot_frames/frame_", name="Basic_Bot", fps=70)
 
 
 class Drone_Bot(Bot, others.Animation):
