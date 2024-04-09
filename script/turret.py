@@ -98,15 +98,20 @@ class Projectile:
     def move(self):
         for bot in self.jeu.game_entities_list:
             if isinstance(bot, enemy.Bot):
-                if self.is_colliding(bot.rect):
-                    return bot.get_damage(self.degats)
+                if self.is_colliding(bot):
+                    if isinstance(bot, enemy.Drone_Bot):
+                        break
+                    else:
+                        return bot.get_damage(self.degats)
         self.position[0] += self.vitesse
         self.rect.x += self.vitesse
         if self.position[0] > self.jeu.taille_fenetre[0]:
             self.is_dead = True
             
-    def is_colliding(self, cible : pg.rect):
-        if self.rect.colliderect(cible): 
+    def is_colliding(self, cible):
+        if self.rect.colliderect(cible.rect):
+            if isinstance(cible, enemy.Drone_Bot):
+                return False 
             return True
         else: return False
 
@@ -136,7 +141,7 @@ class Basic_Turret(Turret):
         shoot = False
         for entity in self.jeu.game_entities_list:
             if isinstance(entity, enemy.Bot):
-                if entity is not None:
+                if not isinstance(entity, enemy.Drone_Bot):
                     if entity.position[0] <= self.position[0] + self.portee and self.rect.colliderect((self.position[0], entity.position[1], entity.rect.width, entity.rect.height)):
                         shoot = True
                         break
@@ -155,12 +160,12 @@ class Basic_Projectile(Projectile):
         # Définir le rectangle
         self.rect = pg.Rect(self.position[0], self.position[1], 24, 12)  # x, y, largeur, hauteur
 
-    def is_colliding(self, cible : pg.rect):
-        if self.rect.colliderect(cible): 
-            self.is_dead = True
-            return True
+    def is_colliding(self, cible):
+        if self.rect.colliderect(cible.rect):
+            if not isinstance(cible, enemy.Drone_Bot):
+                self.is_dead = True
+                return True
         else: return False
-
 
 class Laser_Turret(Turret):
     
@@ -177,7 +182,7 @@ class Laser_Turret(Turret):
         shoot = False
         for entity in self.jeu.game_entities_list:
             if isinstance(entity, enemy.Bot):
-                if entity is not None:
+                if not isinstance(entity, enemy.Drone_Bot):
                     if entity.position[0] <= self.position[0] + self.portee and self.rect.colliderect((self.position[0], entity.position[1], entity.rect.width, entity.rect.height)):
                         shoot = True
                         break
@@ -206,7 +211,7 @@ class Laser_Projectile(Projectile):
         if self.damage == False:
             for bot in self.jeu.game_entities_list:
                 if isinstance(bot, enemy.Bot):
-                    if self.is_colliding(bot.rect):
+                    if self.is_colliding(bot):
                         bot.get_damage(self.degats)
                         #self.damage = True
         self.height_substraction += 1
@@ -240,7 +245,7 @@ class Plasma_Turret(Turret):
         shoot = False
         for entity in self.jeu.game_entities_list:
             if isinstance(entity, enemy.Bot):
-                if entity is not None:
+                if not isinstance(entity, enemy.Drone_Bot):
                     if entity.position[0] <= self.position[0] + self.portee and self.rect.colliderect((self.position[0], entity.position[1], entity.rect.width, entity.rect.height)):
                         shoot = True
                         break
@@ -301,7 +306,7 @@ class Plasma_Projectile(Projectile):
         if self.state == "active":
             for bot in self.jeu.game_entities_list:
                 if isinstance(bot, enemy.Bot):
-                    if self.is_colliding(bot.rect):
+                    if self.is_colliding(bot):
                         distance = ((bot.position[0] - self.position[0])**2 + (bot.position[1] - self.position[1])**2)**0.5
                         degat =  max(0, (self.tourelle.portee - distance) / self.tourelle.portee) * self.degats  # Les dégâts augmentent lorsque l'ennemi se rapproche
                         self.cible_x = bot.position[0]
@@ -314,7 +319,7 @@ class Plasma_Projectile(Projectile):
 class BlackHole_Turret(Turret):
     
     def __init__(self, jeu, x, y):
-        super().__init__(jeu, x, y, vie = 300, degats= 0.03, portee=1000, cadence=20, prix=300, name = "Tourelle_Blackhole")
+        super().__init__(jeu, x, y, vie = 300, degats= 0.02, portee=1000, cadence=20, prix=300, name = "Tourelle_Blackhole")
         self.image = pg.image.load("assets/images/turrets/blackHole_turret.png").convert_alpha()
         self.image = pg.transform.scale(self.image, (75, 100))
         self.position[0] = (self.position[0] - self.image.get_width()// 2) 
@@ -351,7 +356,7 @@ class BlackHole_Projectile(Projectile):
             self.state = "projectile" # or "blackhole"
             self.image = pg.transform.scale(pg.image.load('assets/images/projectiles/blackhole_projectile.png'), (60, 60)).convert_alpha()
             self.target = self.find_shoot_spot()
-            self.attraction_force = 0.075
+            self.attraction_force = 0.1
         
         def find_shoot_spot(self):
             self.bot_list = []
@@ -397,7 +402,7 @@ class BlackHole_Projectile(Projectile):
                             self.bot_list.append(bot)
                 
                 for bot in self.bot_list:
-                    if self.is_colliding(bot.rect):
+                    if self.is_colliding(bot):
                         bot.get_damage(self.degats)
                     
                     if bot.position[0] <= self.position[0] + self.range and bot.position[0] >= self.position[0] - self.range:
@@ -443,11 +448,13 @@ class Omni_Turret(Turret):
         def shoot(self):
             shoot = False
             
-            for entity in reversed(self.jeu.game_entities_list):
+            self.jeu.game_entities_list.sort(key=lambda bot: bot.position[0])
+            for entity in self.jeu.game_entities_list:
                 if isinstance(entity, enemy.Bot):
-                    shoot = True
-                    cible = entity
-
+                    if not isinstance(entity, enemy.Drone_Bot):    
+                        shoot = True
+                        cible = entity
+                        break
             if shoot:
                 if time.time() - self.last_shot >= self.cadence:
                     self.last_shot = time.time()
@@ -464,7 +471,7 @@ class Omni_Projectile(Projectile):
         self.cible = cible
         self.vx, self.vy = 0, 0
     def move(self):
-        if self.is_colliding(self.cible.rect):
+        if self.is_colliding(self.cible):
             self.cible.get_damage(self.degats)
             self.is_dead = True
         else:

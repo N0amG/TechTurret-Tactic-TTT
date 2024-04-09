@@ -145,7 +145,7 @@ class Basic_Bot(Bot):
 
 class Drone_Bot(Bot, others.Animation):
     def __init__(self, jeu, x, y, id):
-        super().__init__(jeu, x, y, id, vie = 25, degats=10, vitesse= 0.15, portee = 0, cadence = 0.25, path ="enemy/drone_bot_frames/frame_", name="Drone_Bot", coef = 3, flip= False)
+        super().__init__(jeu, x, y, id, vie = 25, degats=10, vitesse= 0.15, portee = 0, cadence = 0.5, path ="enemy/drone_bot_frames/frame_", name="Drone_Bot", coef = 3, flip= False)
     
     def move(self):
         self.update()
