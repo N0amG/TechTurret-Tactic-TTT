@@ -89,8 +89,7 @@ class Game:
         self.kamas_surface = None
         
         # Gérer les vagues d'ennemis
-        self.wave = 0
-        print(f"Wave {self.wave} started !")
+        self.wave = 1
         
         self.wave_ended = False
         self.bot_wave_spawner = enemy.Bot_Wave_Spawner(jeu=self)
@@ -98,9 +97,7 @@ class Game:
         #test et placement des éléments    
         #self.game_entities_list.append(turret.AntiMatter_Turret(self ,self.matrice_tourelle[2][4][1], self.matrice_tourelle[2][4][0]))
         self.game_entities_list.append(turret.Basic_Turret(self ,self.matrice_tourelle[2][4][1], self.matrice_tourelle[2][4][0]))
-        self.game_entities_list.append(enemy.Drone_Bot(self, self.matrice_bot[0][0][1], self.matrice_bot[0][0][0], 1))
-        self.game_entities_list.append(enemy.Drone_Bot(self, self.matrice_bot[0][0][1], self.matrice_bot[0][0][0], 1))
-        self.bot_wave_spawner.manual_spawn(self.matrice_bot[2][0][1], self.matrice_bot[2][0][0])
+        self.bot_wave_spawner.manual_spawn(self.matrice_bot[2][0][1], self.matrice_bot[2][0][0], "assault")
         #self.debug_bot_timer = time.time()
         
         
@@ -238,7 +235,13 @@ class Game:
                 pg.draw.rect(self.fenetre, (255, 255, 255), rect, 1)
                     
         #for entity in self.game_entities_list : print(entity.name)
-        
+    
+    def render_wave(self):
+        font = pg.font.Font(None, 50)
+        text = font.render(f"Wave {self.wave}", True, (255, 255, 255))
+        text_rect = text.get_rect(topright=(self.taille_fenetre[0] - 10, 10))
+        self.fenetre.blit(text, text_rect)
+    
     def render_game_over(self):
         font = pg.font.Font(None, 100)
         text = font.render("Game Over", True, (255, 0, 0))
@@ -353,6 +356,8 @@ class Game:
         # Dessiner sur la fenêtre
         self.fenetre.blit(self.fond_ecran, (self.largeur_interface, 0))  # Dessine l'image du fond d'écran aux coordonnées (0, 0)
 
+        self.render_wave()
+        
         # Affichage du "Game Over"
         if self.is_game_over:
             self.render_game_over()

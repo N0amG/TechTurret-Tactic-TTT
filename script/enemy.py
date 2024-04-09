@@ -40,8 +40,13 @@ class Bot_Wave_Spawner:
             return False
 
         
-    def manual_spawn(self, y, x):
-        self.jeu.game_entities_list.append(Basic_Bot(self.jeu, y, x, self.id))
+    def manual_spawn(self, y, x, bot_type):
+        if bot_type == "basic":
+            self.jeu.game_entities_list.append(Basic_Bot(self.jeu, y, x, self.id))
+        elif bot_type == "drone":
+            self.jeu.game_entities_list.append(Drone_Bot(self.jeu, y, x, self.id))
+        elif bot_type == "assault":
+            self.jeu.game_entities_list.append(Assault_Bot(self.jeu, y, x, self.id))
         self.id += 1
         self.spawned += 1
             
@@ -136,14 +141,12 @@ class Bot(pg.sprite.Sprite):
         pg.draw.rect(fenetre, (255, 0, 0), (position_barre_rouge[0], position_barre_rouge[1], self.rect.width - largeur_barre_verte, 5))
         
 
-import pygame as pg
-
 class Basic_Bot(Bot):
     def __init__(self, jeu, x, y, id):
         super().__init__(jeu, x, y, id, vie = 100, degats=20, vitesse= 0.05, portee = 0, cadence = 2, path ="enemy/basic_bot_frames/frame_", name="Basic_Bot", fps=70)
 
 
-class Drone_Bot(Bot, others.Animation):
+class Drone_Bot(Bot):
     def __init__(self, jeu, x, y, id):
         super().__init__(jeu, x, y, id, vie = 25, degats=10, vitesse= 0.15, portee = 0, cadence = 0.5, path ="enemy/drone_bot_frames/frame_", name="Drone_Bot", coef = 3, flip= False)
     
@@ -169,10 +172,53 @@ class Drone_Bot(Bot, others.Animation):
         pass
         
    
-        
+class Assault_Bot(Bot):
+    def __init__(self, jeu, x, y, id):
+        super().__init__(jeu, x, y, id, vie = 200, degats=40, vitesse= 0.05, portee = 500, cadence = 3, path ="enemy/assault_bot_frames/frame_", name="Assault_Bot", fps=70)
     
-        
+    def shoot(self):
+        for entity in self.entity_list:
+            if isinstance(entity, turret.Turret) and self.rect.colliderect((self.rect.x, entity.rect.y, entity.rect.width, entity.rect.height)):
+                if time.time() - self.last_shot >= self.cadence:
+                    self.last_shot = time.time()
+                    return self.jeu.game_entities_list.append(Bullet(self.jeu, self.rect.x, self.rect.y, self.degats, self.portee, self.id))
 
+
+class Bullet: 
+   
+    def __init__(self, jeu, x, y, degats, vitesse = -1, name="bullet"):
+        self.jeu = jeu
+        self.position = [x, y]
+        self.degats = degats
+        self.vitesse = vitesse
+        self.name = name
+        self.is_dead = False
+        # Définir la couleur en RGB
+        self.color = (100, 100, 100)  
+        # Définir le rectangle
+        self.rect = pg.Rect(self.position[0], self.position[1], 24, 12)  # x, y, largeur, hauteur
+    
+    def move(self):
+        for turret in self.jeu.game_entities_list:
+            if isinstance(turret, turret.Turret):
+                if self.is_colliding(turret):
+                    return turret.get_damage(self.degats)
+                
+        self.position[0] += self.vitesse
+        self.rect.x += self.vitesse
+        if self.position[0] < 0:
+            self.is_dead = True
+            
+    def is_colliding(self, cible):
+        if self.rect.colliderect(cible.rect):
+            self.is_dead = True
+            return True
+        else: return False
+    
+    def render(self, fenetre):
+        # Dessiner le rectangle sur la surface
+        pg.draw.rect(self.jeu.fenetre, self.color, self.rect)
+        
 if __name__ == "__main__":
     import game
     jeu = game.Game()
