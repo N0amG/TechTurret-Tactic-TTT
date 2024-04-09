@@ -3,23 +3,28 @@ import pygame as pg
 
 class Animation(pg.sprite.Sprite):
     # path : str -> exemple : 'enemy/drone/frame_'
-    def __init__(self, nb_images : int, path : str, x : int, y : int , proportion : tuple, fps = 90):
+    def __init__(self, nb_images : int, path : str, x : int, y : int , proportion : tuple, flip, fps : int):
         super().__init__()
         self.proportion = proportion
+        self.fps = fps
+        self.flip = flip
+        self.current_frame = 0
+        self.last_update = pg.time.get_ticks()
+        
         self.images = self.get_images(nb_images, path)
         self.image = self.images[0]
         self.rect = self.image.get_rect()
         self.rect.x = x
         self.rect.y = y
-        self.fps = fps
-        self.current_frame = 0
-        self.last_update = pg.time.get_ticks()
-
     
     def get_images(self, nb_images, path) -> list:
         images = []
         for i in range(nb_images):
-            images.append(pg.transform.scale(pg.image.load(f'assets/images/{path}{i}.png').convert_alpha(), self.proportion))
+            image = pg.transform.scale(pg.image.load(f'assets/images/{path}{i}.png'), self.proportion)
+            if self.flip:
+                image = pg.transform.flip(image, True, False)
+                
+            images.append(image.convert_alpha())
         return images
     
     def update(self):
@@ -32,7 +37,7 @@ class Animation(pg.sprite.Sprite):
     def render(self, fenetre):
 
         # hitbox
-        pg.draw.rect(fenetre, (255,0,0), (self.rect.x, self.rect.y, self.rect.width, self.rect.height), 1)
+        #pg.draw.rect(fenetre, (255,0,0), (self.rect.x, self.rect.y, self.rect.width, self.rect.height), 1)
         
         fenetre.blit(self.image, self.rect)
 
