@@ -512,90 +512,97 @@ class Omni_Projectile(Projectile):
 
 class AntiMatter_Turret(Turret):
         
-        def __init__(self, jeu, x, y):
-            super().__init__(jeu, x, y, vie = 200, degats= 50, portee=1000, cadence=10, prix=500, name = "Tourelle_AntiMatter")
-            self.image = pg.image.load("assets/images/turrets/antimatter_turret.png").convert_alpha()
-            self.image = pg.transform.scale(self.image, (75, 100))
-            self.position[0] = (self.position[0] - self.image.get_width()// 2) 
-            self.position[1] = (self.position[1] - self.image.get_height()// 2) 
-            self.rect = self.image.get_rect()
-            self.rect.x, self.rect.y = self.position[0], self.position[1]
-            self.cible = None
-        
-        def shoot(self):
-            shoot = False
-            for entity in reversed(self.jeu.game_entities_list):
-                if isinstance(entity, enemy.Bot):
-                    if entity.position[0] <= self.position[0] + self.portee and self.rect.colliderect((self.position[0], entity.position[1], entity.rect.width, entity.rect.height)):
-                        shoot = True
-                        self.cible = entity
-                        break
-            if shoot:
-                if time.time() - self.last_shot >= self.cadence:
-                    self.last_shot = time.time()
-                    return AntiMatter_Projectile(jeu=self.jeu,cible = entity, x=self.position[0]+self.rect.width, y=self.position[1]+self.rect.height//2 -5, tourelle = self, degats=self.degats)
-            return None
+    def __init__(self, jeu, x, y):
+        super().__init__(jeu, x, y, vie = 200, degats= 50, portee=1000, cadence=10, prix=500, name = "Tourelle_AntiMatter")
+        self.image = pg.image.load("assets/images/turrets/antimatter_turret.png").convert_alpha()
+        self.image = pg.transform.scale(self.image, (75, 100))
+        self.position[0] = (self.position[0] - self.image.get_width()// 2) 
+        self.position[1] = (self.position[1] - self.image.get_height()// 2) 
+        self.rect = self.image.get_rect()
+        self.rect.x, self.rect.y = self.position[0], self.position[1]
+        self.cible = None
+    
+    def shoot(self):
+        shoot = False
+        for entity in reversed(self.jeu.game_entities_list):
+            if isinstance(entity, enemy.Bot):
+                if entity.position[0] <= self.position[0] + self.portee and self.rect.colliderect((self.position[0], entity.position[1], entity.rect.width, entity.rect.height)):
+                    shoot = True
+                    self.cible = entity
+                    break
+        if shoot:
+            if time.time() - self.last_shot >= self.cadence:
+                self.last_shot = time.time()
+                return AntiMatter_Projectile(jeu=self.jeu,cible = entity, x=self.position[0]+self.rect.width, y=self.position[1]+self.rect.height//2 -5, tourelle = self, degats=self.degats)
+        return None
 
 class AntiMatter_Projectile(Projectile):
             
-        def __init__(self, jeu, cible, x, y, tourelle, degats):
-            super().__init__(jeu, x, y, degats, vitesse = 1, name="antimatter_projectile")
-            self.color = (0, 0, 0)  
-            self.range = 500            
-            self.is_dead = False
-            self.duree = 5
-            self.state = "projectile" # or "explosion"
-            self.image = pg.transform.scale(pg.image.load('assets/images/projectiles/antimatter_projectile.png'), (60, 60)).convert_alpha()
-            self.rect = self.image.get_rect()
-            self.rect.y = y-20
-            self.tourelle = tourelle
-            self.target = cible.position[:]
-            self.liste_points = []
+    def __init__(self, jeu, cible, x, y, tourelle, degats):
+        super().__init__(jeu, x, y, degats, vitesse = 1, name="antimatter_projectile")
+        self.color = (0, 0, 0)  
+        self.range = 500            
+        self.is_dead = False
+        self.duree = 5
+        self.state = "projectile" # or "explosion"
+        self.image = pg.transform.scale(pg.image.load('assets/images/projectiles/antimatter_projectile.png'), (60, 60)).convert_alpha()
+        self.rect = self.image.get_rect()
+        self.rect.y = y-20
+        self.tourelle = tourelle
+        self.target = cible.position[:]
+        self.liste_points = []
+    
+    def f(self, x):
+        a = self.target[0]
+        return -(x - self.tourelle.position[0]) * (x - a)
+    
+    def trajectory(self, x):
+        # b = self.tourelle.position[1] - self.rect.height - 100
+        b = 200
+        a = self.target[0]
         
-        def f(self, x):
-            a = self.target[0]
-            return -x**2 + x * a + x * self.tourelle.position[0] - self.tourelle.position[0] * a
-        
-        def trajectory(self, x):
-            b = self.tourelle.position[1] - 100
-            a = self.target[0]
-            #print(a)
-            return (b / self.f(a/2)) * self.f(x) + self.rect.height//2
-        
-        def derive(self, x):
-            a = self.target[0]
-            return -2*x + a
-        
-        def derive_trajectory(self, x):
-            a = self.target[0]
-            b = x /2
-            return -b/2
+        return (b / self.f(a/2)) * self.f(x)
+    
+    def derive(self, x):
+        a = self.target[0]
+        return -2*x + a + self.tourelle.position[0]
+    
+    def derive_trajectory(self, x):
+        a = self.target[0]
+        b = x / 2
+        return -b/2
 
-        def move(self):
-            if self.state == "projectile":
-                if self.position[0] < self.target[0]:
-                    self.position[0] += self.vitesse
-                    self.position[1] = self.jeu.taille_fenetre[1] - self.trajectory(self.position[0]) - self.tourelle.position[1]
-                    self.liste_points.append([self.position[0], self.position[1]])
-                    self.rect.x = self.position[0]
-                else:
-                    self.state = "explosion"
-                    self.last_time = time.time()
-                
-                if self.position[0] > self.jeu.taille_fenetre[0]:
-                    self.is_dead = True
+    def move(self):
+        if self.state == "projectile":
+            if self.position[0] < self.target[0]:
+                self.position[0] += self.vitesse
+                self.position[1] = self.f(self.position[0])/600
+                # self.position[1] = - self.jeu.taille_fenetre[1] + self.trajectory(self.position[0])
+                self.liste_points.append([
+                    self.position[0],
+                    self.position[1]
+                ])
+                self.rect.x = self.position[0]
+            else:
+                self.state = "explosion"
+                self.last_time = time.time()
             
-
+            if self.position[0] > self.jeu.taille_fenetre[0]:
+                self.is_dead = True
         
-        def render(self, fenetre):
-            angle = self.derive_trajectory(self.position[0]) - 110
-            #print("angle", angle)
-            rotated_image = pg.transform.rotate(self.image, angle)
-            fenetre.blit(rotated_image, (self.position[0], self.position[1]))
-            for point in self.liste_points:
-                pg.draw.circle(fenetre, (255, 0, 0), point, 2)
-            #afficher la hitbox
-            pg.draw.rect(fenetre, (255,0,0), (self.rect.x, self.rect.y, self.rect.width, self.rect.height), 1)
+
+    
+    def render(self, fenetre):
+        angle = self.derive_trajectory(self.position[0]) - 110
+        #print("angle", angle)
+        rotated_image = pg.transform.rotate(self.image, angle)
+        fenetre.blit(rotated_image, (self.position[0], self.position[1]))
+        
+        for point in self.liste_points:
+            pg.draw.circle(fenetre, (255, 0, 0), point, 2)
+            
+        #afficher la hitbox
+        pg.draw.rect(fenetre, (255,0,0), (self.rect.x, self.rect.y, self.rect.width, self.rect.height), 1)
 
 
 

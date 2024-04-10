@@ -75,7 +75,7 @@ class Game:
         
         # Mise en place du shop
         # Kama = monnaie du jeu
-        self.kamas = 50000000
+        self.kamas = 5_000_000_000_000
         self.last_kama_time = time.time()
         self.kama_image = pg.image.load("assets/images/others/kama.png")
         
@@ -96,8 +96,9 @@ class Game:
         
         #test et placement des éléments    
         #self.game_entities_list.append(turret.AntiMatter_Turret(self ,self.matrice_tourelle[2][4][1], self.matrice_tourelle[2][4][0]))
-        self.game_entities_list.append(turret.Basic_Turret(self ,self.matrice_tourelle[2][4][1], self.matrice_tourelle[2][4][0]))
+        self.game_entities_list.append(turret.AntiMatter_Turret(self ,self.matrice_tourelle[2][4][1], self.matrice_tourelle[2][4][0]))
         self.bot_wave_spawner.manual_spawn(self.matrice_bot[2][0][1], self.matrice_bot[2][0][0], "assault")
+        self.bot_wave_spawner.manual_spawn(self.matrice_bot[2][1][1], self.matrice_bot[2][1][0], "basic")
         #self.debug_bot_timer = time.time()
         
         
