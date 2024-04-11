@@ -2,11 +2,9 @@ TechTurret Tactic - TTT
 
 ---------------
 
-Version 0.5.4-dev
+Version 0.5.5-dev
 
-dev des tourelles antimatière #en pause
-
-ajouts des bots d'assault
+ajouts des bots kamikaze
 
 ----------------
 

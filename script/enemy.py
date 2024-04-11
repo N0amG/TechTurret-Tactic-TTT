@@ -38,8 +38,7 @@ class Bot_Wave_Spawner:
                 return 2
         else:
             return False
-
-        
+    
     def manual_spawn(self, y, x, bot_type):
         if bot_type == "basic":
             self.jeu.game_entities_list.append(Basic_Bot(self.jeu, y, x, self.id))
@@ -47,9 +46,11 @@ class Bot_Wave_Spawner:
             self.jeu.game_entities_list.append(Drone_Bot(self.jeu, y, x, self.id))
         elif bot_type == "assault":
             self.jeu.game_entities_list.append(Assault_Bot(self.jeu, y, x, self.id))
+        elif bot_type == "kamikaze":
+            self.jeu.game_entities_list.append(Kamikaze_Bot(self.jeu, y, x, self.id))
         self.id += 1
         self.spawned += 1
-            
+
 class Bot(pg.sprite.Sprite):
     def __init__(self, jeu, x, y, id, vie, degats, vitesse, portee, cadence, name, path, nb_images = 8, coef = 3, flip = True, fps = 90):
         self.jeu = jeu
@@ -138,10 +139,11 @@ class Bot(pg.sprite.Sprite):
 
         # Dessin de la barre rouge
         pg.draw.rect(fenetre, (255, 0, 0), (position_barre_rouge[0], position_barre_rouge[1], self.rect.width - largeur_barre_verte, 5))
-        
+
+
 class Basic_Bot(Bot):
     def __init__(self, jeu, x, y, id):
-        super().__init__(jeu, x, y, id, vie = 100, degats=20, vitesse= 0.05, portee = 0, cadence = 2, path ="enemy/basic_bot_frames/frame_", name="Basic_Bot")
+        super().__init__(jeu, x, y, id, vie = 100, degats=20, vitesse= 0.08, portee = 0, cadence = 2, path ="enemy/basic_bot_frames/frame_", name="Basic_Bot")
 
 class Drone_Bot(Bot):
     def __init__(self, jeu, x, y, id):
@@ -167,8 +169,7 @@ class Drone_Bot(Bot):
     def get_damage(self, degats):
         # drone est immunisé aux dégats
         pass
-        
-   
+
 class Assault_Bot(Bot):
     def __init__(self, jeu, x, y, id):
         super().__init__(jeu, x, y, id, vie = 200, degats=25, vitesse= 0.05, portee = 300, cadence = 5, path ="enemy/assault_bot_frames/frame_", name="Assault_Bot")
@@ -228,10 +229,18 @@ class Bullet:
         # Dessiner le rectangle sur la surface
         pg.draw.rect(self.jeu.fenetre, self.color, self.rect)
 
-
-
-
-
+class Kamikaze_Bot(Bot):
+    def __init__(self, jeu, x, y, id):
+        super().__init__(jeu, x, y, id, vie = 50, degats=150, vitesse= 0.2, portee = 0, cadence = 0, path ="enemy/kamikaze_bot_frames/frame_", name="Kamikaze_Bot")
+    
+    def attack(self, cible):
+        if self.rect.colliderect(cible.rect):
+            self.rect = pg.Rect(self.rect.x - self.rect.width, self.rect.y - self.rect.height, 3 * self.rect.width, 3 * self.rect.height)
+            for entity in self.jeu.game_entities_list:
+                if isinstance(entity, turret.Turret) and self.rect.colliderect(entity.rect):
+                    entity.get_damage(self.degats)
+            self.is_dead = True
+            self.jeu.game_entities_list.append(others.Animation(17, "projectiles/explosion_frames/frame_", self.rect.x, self.rect.y, (250, 250), flip=False, loop= False, fps=120))
 
 if __name__ == "__main__":
     import game

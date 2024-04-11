@@ -1,5 +1,6 @@
 import pygame as pg
 import turret
+import others
 import enemy
 import time
 
@@ -42,7 +43,7 @@ class Game:
         decalage_x = 160
         decalage_y = 295 + self.largeur_interface
         
-        self.liste_tourelle = [("Turret", 100), ("Laser Turret", 200), ("Shield", 250), ("Plasma Turret",350), ("Omni Turret", 450), ("BlackHole Turret", 500),("AntiMatter Turret", 750)]
+        self.liste_tourelle = [("Turret", 100), ("Laser Turret", 200), ("Shield", 250), ("Plasma Turret",350), ("Omni Turret", 450), ("BlackHole Turret", 500),] #("AntiMatter Turret", 750)
         
         self.paused = False
         
@@ -98,7 +99,7 @@ class Game:
         #self.game_entities_list.append(turret.AntiMatter_Turret(self ,self.matrice_tourelle[2][4][1], self.matrice_tourelle[2][4][0]))
         self.game_entities_list.append(turret.Basic_Turret(self ,self.matrice_tourelle[2][4][1], self.matrice_tourelle[2][4][0]))
         
-        self.bot_wave_spawner.manual_spawn(self.matrice_bot[2][0][1], self.matrice_bot[2][0][0], "drone")
+        self.bot_wave_spawner.manual_spawn(self.matrice_bot[2][0][1], self.matrice_bot[2][0][0], "kamikaze")
         self.bot_wave_spawner.manual_spawn(self.matrice_bot[2][1][1], self.matrice_bot[2][1][0], "basic")
         #self.debug_bot_timer = time.time()
         
@@ -215,7 +216,10 @@ class Game:
                                     
                     elif isinstance(entity, enemy.Bot):
                         entity.move()
-            
+
+                    elif isinstance(entity, others.Animation):
+                        entity.update()
+                        
             if not self.wave_ended and cond:
                 if self.bot_wave_spawner.update() == 3:
                     self.wave_ended = True

@@ -27,7 +27,8 @@ class Turret_selection:
             return Omni_Turret(jeu, x, y)
         
         elif name == "AntiMatter Turret":
-            return AntiMatter_Turret(jeu, x, y)
+            return
+            #return AntiMatter_Turret(jeu, x, y)
         
         else:
             return None
@@ -508,7 +509,9 @@ class Omni_Projectile(Projectile):
 
 
 
-# // Lance Roquette a atnimatire, trajectorie parabolique, degats de zone en 3*3, explosion, gros dégat, cadence lente, portée moyenne, prix élevé
+'''
+
+Developpement de la tourelle antimatière en pause, car le projectile ne fonctionne pas correctement. 
 
 class AntiMatter_Turret(Turret):
         
@@ -604,7 +607,7 @@ class AntiMatter_Projectile(Projectile):
         #afficher la hitbox
         pg.draw.rect(fenetre, (255,0,0), (self.rect.x, self.rect.y, self.rect.width, self.rect.height), 1)
 
-
+'''
 
 if __name__ == "__main__":
     import game
