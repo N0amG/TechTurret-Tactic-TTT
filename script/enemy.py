@@ -59,11 +59,7 @@ class Bot(pg.sprite.Sprite):
         self.id = id
         self.last_shot = time.time()-self.cadence
         self.is_dead = False
-
-    def __str__(self):
-        return f"Bot id : {self.id}"
-    
-
+        #print(self)
         
     def move(self):
         for entity in self.entity_list:
@@ -88,6 +84,9 @@ class Bot(pg.sprite.Sprite):
             return True
         else:
             return False
+    
+    def __str__(self):
+        return f"Bot id : {self.id}"
     
     def render(self, fenetre):
         fenetre.blit(self.image, self.position)
