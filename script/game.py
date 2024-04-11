@@ -97,10 +97,10 @@ class Game:
         
         #test et placement des éléments    
         #self.game_entities_list.append(turret.AntiMatter_Turret(self ,self.matrice_tourelle[2][4][1], self.matrice_tourelle[2][4][0]))
-        self.game_entities_list.append(turret.Basic_Turret(self ,self.matrice_tourelle[2][4][1], self.matrice_tourelle[2][4][0]))
+        self.game_entities_list.append(turret.Basic_Turret(self ,self.matrice_tourelle[2][9][1], self.matrice_tourelle[2][9][0]))
         
-        self.bot_wave_spawner.manual_spawn(self.matrice_bot[2][0][1], self.matrice_bot[2][0][0], "kamikaze")
-        self.bot_wave_spawner.manual_spawn(self.matrice_bot[2][1][1], self.matrice_bot[2][1][0], "basic")
+        self.bot_wave_spawner.manual_spawn(self.matrice_bot[2][0][1], self.matrice_bot[2][0][0], "tank")
+        #self.bot_wave_spawner.manual_spawn(self.matrice_bot[2][1][1], self.matrice_bot[2][1][0], "basic")
         #self.debug_bot_timer = time.time()
         
         

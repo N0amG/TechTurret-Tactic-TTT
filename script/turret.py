@@ -112,7 +112,7 @@ class Projectile:
     def is_colliding(self, cible):
         if self.rect.colliderect(cible.rect):
             if isinstance(cible, enemy.Drone_Bot):
-                return False 
+                return False
             return True
         else: return False
 

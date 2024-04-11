@@ -48,6 +48,8 @@ class Bot_Wave_Spawner:
             self.jeu.game_entities_list.append(Assault_Bot(self.jeu, y, x, self.id))
         elif bot_type == "kamikaze":
             self.jeu.game_entities_list.append(Kamikaze_Bot(self.jeu, y, x, self.id))
+        elif bot_type == "tank":
+            self.jeu.game_entities_list.append(Tank_Bot(self.jeu, y, x, self.id))
         self.id += 1
         self.spawned += 1
 
@@ -241,6 +243,33 @@ class Kamikaze_Bot(Bot):
                     entity.get_damage(self.degats)
             self.is_dead = True
             self.jeu.game_entities_list.append(others.Animation(17, "projectiles/explosion_frames/frame_", self.rect.x, self.rect.y, (250, 250), flip=False, loop= False, fps=120))
+
+
+class Tank_Bot(Bot):
+    def __init__(self, jeu, x, y, id):
+        super().__init__(jeu, x, y, id, vie = 400, degats=50, vitesse= 0.03, portee = 0, cadence = 6, path ="enemy/tank_bot_frames/frame_", name="Tank_Bot")
+        self.impact_list = []
+    
+    def update(self):
+
+        self.animation.update()
+        self.shoot()
+        for impact in self.impact_list:
+            impact.update()
+            if impact.is_dead:
+                self.impact_list.remove(impact)
+    
+    def shoot(self):
+        if time.time() - self.last_shot >= self.cadence:
+            for entity in self.entity_list:
+                if isinstance(entity, turret.Turret) and self.rect.colliderect((entity.rect.x + self.portee, entity.rect.y, entity.rect.width, entity.rect.height)):
+                    entity.get_damage(self.degats)
+                    self.last_shot = time.time()
+                    impact = others.Animation(16, "projectiles/impact_frames/frame_", self.rect.x - 2 * self.rect.width, self.rect.y - self.rect.height, (250, 250), flip=False, loop= False, fps=120)
+                    self.impact_list.append(impact)
+                    self.jeu.game_entities_list.append(impact)
+
+
 
 if __name__ == "__main__":
     import game
