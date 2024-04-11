@@ -3,7 +3,7 @@ import pygame as pg
 
 class Animation(pg.sprite.Sprite):
     # path : str -> exemple : 'enemy/drone/frame_'
-    def __init__(self, nb_images : int, path : str, x : int, y : int , proportion : tuple, flip, fps : int):
+    def __init__(self, nb_images : int, path : str, x : int, y : int , proportion : tuple, flip, fps = 70):
         super().__init__()
         self.proportion = proportion
         self.fps = fps

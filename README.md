@@ -2,15 +2,11 @@ TechTurret Tactic - TTT
 
 ---------------
 
-Version 0.5.3.1-dev
+Version 0.5.4-dev
 
-dev des tourelles antimatière
+dev des tourelles antimatière #en pause
 
-amélioration de la detection de cible de l'omni turret, 
-amélioration du systeme d'esquive du drone qui n'est plus juste de l'invulnérabilité, 
-amélioration du spawn manuel de bot
-
-dev des bot d'assault
+ajouts des bots d'assault
 
 ----------------
 
