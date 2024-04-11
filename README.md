@@ -6,7 +6,6 @@ Version 0.5-dev
 
 omni tourelles ajoutés
 
-
 ----------------
 
 Objectif : 
