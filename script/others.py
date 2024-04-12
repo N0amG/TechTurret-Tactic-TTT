@@ -3,7 +3,7 @@ import pygame as pg
 
 class Animation(pg.sprite.Sprite):
     # path : str -> exemple : 'enemy/drone/frame_'
-    def __init__(self, nb_images : int, path : str, x : int, y : int , proportion : tuple, flip, fps = 70 , loop = True):
+    def __init__(self, nb_images : int, path : str, x : int, y : int , proportion : tuple, flip: bool, fps : int = 70 , loop : bool = True, duration : int = 0):
         super().__init__()
         self.proportion = proportion
         self.fps = fps
@@ -17,7 +17,9 @@ class Animation(pg.sprite.Sprite):
         self.rect = self.image.get_rect()
         self.rect.x = x
         self.rect.y = y
-
+        self.position = (x, y)
+        self.duration = duration
+        self.start_timer = pg.time.get_ticks()
         self.is_dead = False
         
     def get_images(self, nb_images, path) -> list:
@@ -38,7 +40,11 @@ class Animation(pg.sprite.Sprite):
             self.image = self.images[self.current_frame]
             
         if self.loop == False and self.current_frame == self.nb_images - 1:
-            self.is_dead = True
+            if self.duration != 0:
+                if pg.time.get_ticks() - self.start_timer > self.duration:
+                    self.is_dead = True
+            else:
+                self.is_dead = True
     
     def render(self, fenetre):
 

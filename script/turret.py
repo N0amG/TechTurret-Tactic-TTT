@@ -49,6 +49,10 @@ class Turret:
         self.name = name
         self.last_shot = time.time()-self.cadence
         
+        self.is_disabled : bool = False
+        self.disabled_duration : int = 0
+        self.disabled_start = 0
+        
         self.is_dead = False
 
         
@@ -139,21 +143,26 @@ class Basic_Turret(Turret):
         self.rect.x, self.rect.y = self.position[0], self.position[1]
         
     def shoot(self):
-        shoot = False
-        for entity in self.jeu.game_entities_list:
-            if isinstance(entity, enemy.Bot):
-                if not isinstance(entity, enemy.Drone_Bot):
-                    if entity.position[0] <= self.position[0] + self.portee and self.rect.colliderect((self.position[0], entity.position[1], entity.rect.width, entity.rect.height)):
-                        shoot = True
-                        break
-        if shoot:
-            if time.time() - self.last_shot >= self.cadence:
-                self.last_shot = time.time()
-                return Basic_Projectile(jeu=self.jeu, x=self.position[0]+self.rect.width//2, y=self.position[1]+self.rect.height//2, degats=self.degats)
-        return None
-
+        if not self.is_disabled:
+            shoot = False
+            for entity in self.jeu.game_entities_list:
+                if isinstance(entity, enemy.Bot):
+                    if not isinstance(entity, enemy.Drone_Bot):
+                        if entity.position[0] <= self.position[0] + self.portee and self.rect.colliderect((self.position[0], entity.position[1], entity.rect.width, entity.rect.height)):
+                            shoot = True
+                            break
+            if shoot:
+                if time.time() - self.last_shot >= self.cadence:
+                    self.last_shot = time.time()
+                    return Basic_Projectile(jeu=self.jeu, x=self.position[0]+self.rect.width//2, y=self.position[1]+self.rect.height//2, degats=self.degats)
+            return None
+        else:
+            if (time.time() - self.disabled_start)  >= (self.disabled_duration + self.last_shot + self.cadence - self.disabled_start):
+                self.is_disabled = False
+                self.disabled_duration = 0
+        
+                
 class Basic_Projectile(Projectile): 
-   
     def __init__(self, jeu, x, y, degats):
         super().__init__(jeu, x, y, degats, vitesse = 1, name="basic_projectile")
         # Définir la couleur en RGB
@@ -180,18 +189,23 @@ class Laser_Turret(Turret):
         self.rect.x, self.rect.y = self.position[0], self.position[1]
     
     def shoot(self):
-        shoot = False
-        for entity in self.jeu.game_entities_list:
-            if isinstance(entity, enemy.Bot):
-                if not isinstance(entity, enemy.Drone_Bot):
-                    if entity.position[0] <= self.position[0] + self.portee and self.rect.colliderect((self.position[0], entity.position[1], entity.rect.width, entity.rect.height)):
-                        shoot = True
-                        break
-        if shoot:
-            if time.time() - self.last_shot >= self.cadence:
-                self.last_shot = time.time()
-                return Laser_Projectile(jeu=self.jeu, x=self.position[0]+self.rect.width, y=self.position[1]+self.rect.height//2 -5, degats=self.degats)
-        return None
+        if not self.is_disabled:
+            shoot = False
+            for entity in self.jeu.game_entities_list:
+                if isinstance(entity, enemy.Bot):
+                    if not isinstance(entity, enemy.Drone_Bot):
+                        if entity.position[0] <= self.position[0] + self.portee and self.rect.colliderect((self.position[0], entity.position[1], entity.rect.width, entity.rect.height)):
+                            shoot = True
+                            break
+            if shoot:
+                if time.time() - self.last_shot >= self.cadence:
+                    self.last_shot = time.time()
+                    return Laser_Projectile(jeu=self.jeu, x=self.position[0]+self.rect.width, y=self.position[1]+self.rect.height//2 -5, degats=self.degats)
+            return None
+        else:
+            if (time.time() - self.disabled_start)  >= (self.disabled_duration + self.last_shot + self.cadence - self.disabled_start):
+                self.is_disabled = False
+                self.disabled_duration = 0
      
 class Laser_Projectile(Projectile): 
    
@@ -232,7 +246,7 @@ class Laser_Projectile(Projectile):
 class Plasma_Turret(Turret):
     
     def __init__(self, jeu, x, y):
-        super().__init__(jeu, x, y, vie = 100, degats= 0.15, portee=210, cadence=0, prix=350, name = "Tourelle_Plasma")
+        super().__init__(jeu, x, y, vie = 100, degats= 0.1, portee=210, cadence=0, prix=350, name = "Tourelle_Plasma")
         self.image = pg.image.load("assets/images/turrets/plasma_turret.png").convert_alpha()
         self.image = pg.transform.scale(self.image, (75, 100))
         self.position[0] = (self.position[0] - self.image.get_width()// 2) 
@@ -243,21 +257,26 @@ class Plasma_Turret(Turret):
         self.jeu.game_entities_list.append(self.plasma_projectile)
     
     def shoot(self):
-        shoot = False
-        for entity in self.jeu.game_entities_list:
-            if isinstance(entity, enemy.Bot):
-                if not isinstance(entity, enemy.Drone_Bot):
-                    if entity.position[0] <= self.position[0] + self.portee and self.rect.colliderect((self.position[0], entity.position[1], entity.rect.width, entity.rect.height)):
-                        shoot = True
-                        break
-        if shoot:
-            self.plasma_projectile.state = "active"
-            
+        if not self.is_disabled:
+            shoot = False
+            for entity in self.jeu.game_entities_list:
+                if isinstance(entity, enemy.Bot):
+                    if not isinstance(entity, enemy.Drone_Bot):
+                        if entity.position[0] <= self.position[0] + self.portee and self.rect.colliderect((self.position[0], entity.position[1], entity.rect.width, entity.rect.height)):
+                            shoot = True
+                            break
+            if shoot:
+                self.plasma_projectile.state = "active"
+                
+            else:
+                self.plasma_projectile.state = "unactive"
+                self.plasma_projectile.particles = []
+                
+            return None
         else:
-            self.plasma_projectile.state = "unactive"
-            self.plasma_projectile.particles = []
-            
-        return None
+            if (time.time() - self.disabled_start)  >= (self.disabled_duration + self.last_shot + self.cadence - self.disabled_start):
+                self.is_disabled = False
+                self.disabled_duration = 0
     
 class Plasma_Projectile(Projectile):
     def __init__(self, jeu, tourelle, x, y, degats):
@@ -330,18 +349,23 @@ class BlackHole_Turret(Turret):
         
         
     def shoot(self):
-        shoot = False
-        for entity in self.jeu.game_entities_list:
-            if isinstance(entity, enemy.Bot):
-                if entity is not None:
-                    if entity.position[0] <= self.position[0] + self.portee and self.rect.colliderect((self.position[0], entity.position[1], entity.rect.width, entity.rect.height)):
-                        shoot = True
-                        break
-        if shoot:
-            if time.time() - self.last_shot >= self.cadence:
-                self.last_shot = time.time()
-                return BlackHole_Projectile(jeu=self.jeu, x=self.position[0]+self.rect.width, y=self.position[1]+self.rect.height//2 -5, degats=self.degats)
-        return None
+        if not self.is_disabled:
+            shoot = False
+            for entity in self.jeu.game_entities_list:
+                if isinstance(entity, enemy.Bot):
+                    if entity is not None:
+                        if entity.position[0] <= self.position[0] + self.portee and self.rect.colliderect((self.position[0], entity.position[1], entity.rect.width, entity.rect.height)):
+                            shoot = True
+                            break
+            if shoot:
+                if time.time() - self.last_shot >= self.cadence:
+                    self.last_shot = time.time()
+                    return BlackHole_Projectile(jeu=self.jeu, x=self.position[0]+self.rect.width, y=self.position[1]+self.rect.height//2 -5, degats=self.degats)
+            return None
+        else:
+            if (time.time() - self.disabled_start)  >= (self.disabled_duration + self.last_shot + self.cadence - self.disabled_start):
+                self.is_disabled = False
+                self.disabled_duration = 0
 
 class BlackHole_Projectile(Projectile):
         
@@ -428,14 +452,20 @@ class Shield(Turret):
     
     def __init__(self, jeu, x, y):
         super().__init__(jeu, x, y, vie = 500, degats= 0, portee=0, cadence=0, prix=250, name = "Bouclier")
-        self.image = pg.image.load("assets/images/turrets/shield.png").convert_alpha()
+        self.image = pg.image.load("assets/images/turrets/shield/shield.png").convert_alpha()
         self.image = pg.transform.scale(self.image, (75, 100))
         self.position[0] = (self.position[0] - self.image.get_width()// 2) 
         self.position[1] = (self.position[1] - self.image.get_height()// 2) 
         self.rect = self.image.get_rect()
         self.rect.x, self.rect.y = self.position[0], self.position[1]
     
-
+    def shoot(self):
+        if self.is_disabled:
+            self.image = pg.image.load("assets/images/turrets/shield/diseable_shield.png").convert_alpha()
+            if (time.time() - self.disabled_start)  >= (self.disabled_duration + self.last_shot + self.cadence - self.disabled_start):
+                self.is_disabled = False
+                self.disabled_duration = 0
+                
 class Omni_Turret(Turret):
         def __init__(self, jeu, x, y):
             super().__init__(jeu, x, y, vie = 200, degats= 5, portee="inf", cadence=0.5, prix=450, name = "Tourelle_Omni")
@@ -447,21 +477,26 @@ class Omni_Turret(Turret):
             self.rect.x, self.rect.y = self.position[0], self.position[1]
             
         def shoot(self):
-            shoot = False
-            
-            self.jeu.game_entities_list.sort(key=lambda bot: bot.position[0])
-            for entity in self.jeu.game_entities_list:
-                if isinstance(entity, enemy.Bot):
-                    if not isinstance(entity, enemy.Drone_Bot):    
-                        shoot = True
-                        cible = entity
-                        break
-            if shoot:
-                if time.time() - self.last_shot >= self.cadence:
-                    self.last_shot = time.time()
-                    return Omni_Projectile(jeu=self.jeu, x=self.position[0]+self.rect.width/2, y=self.position[1]+self.rect.height/2 , degats=self.degats, cible = cible)
-            return None
-    
+            if not self.is_disabled:
+                shoot = False
+                
+                self.jeu.game_entities_list.sort(key=lambda bot: bot.position[0])
+                for entity in self.jeu.game_entities_list:
+                    if isinstance(entity, enemy.Bot):
+                        if not isinstance(entity, enemy.Drone_Bot):    
+                            shoot = True
+                            cible = entity
+                            break
+                if shoot:
+                    if time.time() - self.last_shot >= self.cadence:
+                        self.last_shot = time.time()
+                        return Omni_Projectile(jeu=self.jeu, x=self.position[0]+self.rect.width/2, y=self.position[1]+self.rect.height/2 , degats=self.degats, cible = cible)
+                return None
+            else:
+                if (time.time() - self.disabled_start)  >= (self.disabled_duration + self.last_shot + self.cadence - self.disabled_start):
+                    self.is_disabled = False
+                    self.disabled_duration = 0
+        
 class Omni_Projectile(Projectile):
     
     def __init__(self, jeu, x, y, degats, cible):

@@ -50,6 +50,8 @@ class Bot_Wave_Spawner:
             self.jeu.game_entities_list.append(Kamikaze_Bot(self.jeu, y, x, self.id))
         elif bot_type == "tank":
             self.jeu.game_entities_list.append(Tank_Bot(self.jeu, y, x, self.id))
+        elif bot_type == "emp":
+            self.jeu.game_entities_list.append(EMP_Bot(self.jeu, y, x, self.id))
         self.id += 1
         self.spawned += 1
 
@@ -193,7 +195,7 @@ class Assault_Bot(Bot):
                     self.last_shot = time.time()
                     bullet = Bullet(self.jeu, self.rect.x, self.rect.y + self.rect.height/2 , self.degats)
                     self.bullet_list.append(bullet)
-                    self.jeu.game_entities_list.append(bullet)
+                    self.entity_list.append(bullet)
 
 class Bullet: 
    
@@ -210,7 +212,7 @@ class Bullet:
         self.rect = pg.Rect(self.position[0], self.position[1], 24, 5)  # x, y, largeur, hauteur
     
     def move(self):
-        for entity in self.jeu.game_entities_list:
+        for entity in self.entity_list:
             if isinstance(entity, turret.Turret):
                 if self.is_colliding(entity):
                     self.is_dead = True
@@ -238,16 +240,16 @@ class Kamikaze_Bot(Bot):
     def attack(self, cible):
         if self.rect.colliderect(cible.rect):
             self.rect = pg.Rect(self.rect.x - self.rect.width, self.rect.y - self.rect.height, 3 * self.rect.width, 3 * self.rect.height)
-            for entity in self.jeu.game_entities_list:
+            for entity in self.entity_list:
                 if isinstance(entity, turret.Turret) and self.rect.colliderect(entity.rect):
                     entity.get_damage(self.degats)
             self.is_dead = True
-            self.jeu.game_entities_list.append(others.Animation(17, "projectiles/explosion_frames/frame_", self.rect.x, self.rect.y, (250, 250), flip=False, loop= False, fps=120))
+            self.entity_list.append(others.Animation(17, "projectiles/explosion_frames/frame_", self.rect.x, self.rect.y, (250, 250), flip=False, loop= False, fps=120))
 
 
 class Tank_Bot(Bot):
     def __init__(self, jeu, x, y, id):
-        super().__init__(jeu, x, y, id, vie = 400, degats=50, vitesse= 0.03, portee = 0, cadence = 6, path ="enemy/tank_bot_frames/frame_", name="Tank_Bot")
+        super().__init__(jeu, x, y, id, vie = 400, degats=50, vitesse= 0.03, portee = 0, cadence = 6, path ="enemy/tank_bot_frames/frame_", name="Tank_Bot", fps= 30)
         self.impact_list = []
     
     def update(self):
@@ -267,9 +269,42 @@ class Tank_Bot(Bot):
                     self.last_shot = time.time()
                     impact = others.Animation(16, "projectiles/impact_frames/frame_", self.rect.x - 2 * self.rect.width, self.rect.y - self.rect.height, (250, 250), flip=False, loop= False, fps=120)
                     self.impact_list.append(impact)
-                    self.jeu.game_entities_list.append(impact)
+                    self.entity_list.append(impact)
+
+class EMP_Bot(Bot):
+    def __init__(self, jeu, x, y, id):
+        super().__init__(jeu, x, y, id, vie = 100, degats=25, vitesse= 0.1, portee = 0, cadence = 20, path ="enemy/emp_bot_frames/frame_", name="EMP_Bot")
+        self.pos_effect_list = [] # liste des positions des effets
+
+    def update(self):
+        self.animation.update()
+        self.shoot()
+
+    
+    def shoot(self):
+        
+        if time.time() - self.last_shot >= self.cadence:
+        
+            for entity in self.entity_list:
+                
+                if isinstance(entity, turret.Turret) and self.rect.colliderect((entity.rect.x + self.portee, entity.rect.y, entity.rect.width, entity.rect.height)):
+                    self.entity_list.sort(key=lambda turret: turret.position[1])
+                    for entity_2 in self.entity_list:
+                        if isinstance(entity_2, turret.Turret) and entity_2.position[1] == entity.position[1]:
+                            self.pos_effect_list.append((entity_2.rect.x, entity_2.rect.y - entity_2.rect.height))
+                            entity_2.get_damage(self.degats)
+                            entity_2.is_disabled = True
+                            entity_2.disabled_start = time.time()
+                            entity_2.disabled_duration = 10
+                            
+                    self.last_shot = time.time()
+                    self.entity_list.append(others.Animation(25, "projectiles/emp_imulse_frames/frame_", self.rect.x - 1000, self.rect.y - self.rect.height, (1000, 250), flip=True, loop= False, fps=90))
+                    self.is_dead = True
+                    print(self.pos_effect_list)
+                    return
 
 
+                   
 
 if __name__ == "__main__":
     import game

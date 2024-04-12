@@ -97,9 +97,13 @@ class Game:
         
         #test et placement des éléments    
         #self.game_entities_list.append(turret.AntiMatter_Turret(self ,self.matrice_tourelle[2][4][1], self.matrice_tourelle[2][4][0]))
-        self.game_entities_list.append(turret.Basic_Turret(self ,self.matrice_tourelle[2][9][1], self.matrice_tourelle[2][9][0]))
+        #self.game_entities_list.append(turret.Shield(self ,self.matrice_tourelle[2][9][1], self.matrice_tourelle[2][9][0]))
+        #self.game_entities_list.append(turret.BlackHole_Turret(self ,self.matrice_tourelle[2][5][1], self.matrice_tourelle[2][5][0]))
+        self.game_entities_list.append(turret.BlackHole_Turret(self ,self.matrice_tourelle[2][9][1], self.matrice_tourelle[2][9][0]))
+        #self.game_entities_list.append(turret.Omni_Turret(self ,self.matrice_tourelle[2][6][1], self.matrice_tourelle[2][6][0]))
+        #self.game_entities_list.append(turret.Basic_Turret(self ,self.matrice_tourelle[2][5][1], self.matrice_tourelle[2][5][0]))
+        self.bot_wave_spawner.manual_spawn(self.matrice_bot[2][0][1], self.matrice_bot[2][0][0], "emp")
         
-        self.bot_wave_spawner.manual_spawn(self.matrice_bot[2][0][1], self.matrice_bot[2][0][0], "tank")
         #self.bot_wave_spawner.manual_spawn(self.matrice_bot[2][1][1], self.matrice_bot[2][1][0], "basic")
         #self.debug_bot_timer = time.time()
         
@@ -382,10 +386,13 @@ class Game:
                 entity.render(self.fenetre)
                 if not entity.is_dead and isinstance(entity, enemy.Bot):
                     cond = False
-            
 
             if self.wave_ended and cond:
                 self.next_wave_button_render()
+            
+            
+            self.render_shop_interface()
+            self.red_cross_draw()
             
         if self.paused:
             self.render_pause()
