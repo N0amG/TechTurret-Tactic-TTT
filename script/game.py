@@ -76,7 +76,7 @@ class Game:
         
         # Mise en place du shop
         # Kama = monnaie du jeu
-        self.kamas = 5_000_000_000_000
+        self.kamas = 5_000_000_000
         self.last_kama_time = time.time()
         self.kama_image = pg.image.load("assets/images/others/kama.png")
         
@@ -96,16 +96,14 @@ class Game:
         self.bot_wave_spawner = enemy.Bot_Wave_Spawner(jeu=self)
         
         #test et placement des éléments    
-        #self.game_entities_list.append(turret.AntiMatter_Turret(self ,self.matrice_tourelle[2][4][1], self.matrice_tourelle[2][4][0]))
-        #self.game_entities_list.append(turret.Shield(self ,self.matrice_tourelle[2][9][1], self.matrice_tourelle[2][9][0]))
-        #self.game_entities_list.append(turret.BlackHole_Turret(self ,self.matrice_tourelle[2][5][1], self.matrice_tourelle[2][5][0]))
-        self.game_entities_list.append(turret.BlackHole_Turret(self ,self.matrice_tourelle[2][9][1], self.matrice_tourelle[2][9][0]))
-        #self.game_entities_list.append(turret.Omni_Turret(self ,self.matrice_tourelle[2][6][1], self.matrice_tourelle[2][6][0]))
-        #self.game_entities_list.append(turret.Basic_Turret(self ,self.matrice_tourelle[2][5][1], self.matrice_tourelle[2][5][0]))
+        self.game_entities_list.append(turret.Shield(self, self.matrice_tourelle[2][7][1], self.matrice_tourelle[2][8][0]))
+        self.game_entities_list.append(turret.Plasma_Turret(self, self.matrice_tourelle[2][1][1], self.matrice_tourelle[2][1][0]))
+        [self.game_entities_list.append(turret.Omni_Turret(self ,self.matrice_tourelle[2][i][1], self.matrice_tourelle[2][i][0])) for i in range(4,5)]
+
         self.bot_wave_spawner.manual_spawn(self.matrice_bot[2][0][1], self.matrice_bot[2][0][0], "emp")
         
         #self.bot_wave_spawner.manual_spawn(self.matrice_bot[2][1][1], self.matrice_bot[2][1][0], "basic")
-        #self.debug_bot_timer = time.time()
+        self.debug_bot_timer = time.time()
         
         
     def run(self):
@@ -162,7 +160,6 @@ class Game:
                                 self.wave_ended = False
                                 self.wave += 1
                                 self.bot_wave_spawner.update()
-                                print(f"Wave {self.wave} started !")
                                 
                 elif event.type == pg.KEYDOWN:
                     if event.key == pg.K_ESCAPE:
@@ -192,14 +189,14 @@ class Game:
             
             self.kama_loot()
             
-            '''# Réapparition manuel d'un bot pour débuger la tourelle BlackHole
+            # Réapparition manuel d'un bot pour débuger la tourelle BlackHole
             #---------------------------------------------
             if self.debug_bot_timer is not None:
-                if time.time() - self.debug_bot_timer >= 5 :
-                    self.bot_wave_spawner.manual_spawn(self.matrice_bot[0][0][1], self.matrice_bot[0][0][0])
+                if time.time() - self.debug_bot_timer >= 8 :
+                    self.bot_wave_spawner.manual_spawn(self.matrice_bot[2][0][1], self.matrice_bot[2][0][0], "kamikaze")
                     self.debug_bot_timer = None
             #---------------------------------------------
-            '''
+            
             cond = True
             for entity in self.game_entities_list:
                 if entity.is_dead:

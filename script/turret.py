@@ -157,14 +157,14 @@ class Basic_Turret(Turret):
                     return Basic_Projectile(jeu=self.jeu, x=self.position[0]+self.rect.width//2, y=self.position[1]+self.rect.height//2, degats=self.degats)
             return None
         else:
-            if (time.time() - self.disabled_start)  >= (self.disabled_duration + self.last_shot + self.cadence - self.disabled_start):
+            if (time.time() - self.disabled_start)  >= self.disabled_duration:
                 self.is_disabled = False
                 self.disabled_duration = 0
         
                 
 class Basic_Projectile(Projectile): 
     def __init__(self, jeu, x, y, degats):
-        super().__init__(jeu, x, y, degats, vitesse = 1, name="basic_projectile")
+        super().__init__(jeu, x, y, degats, vitesse = 5, name="basic_projectile")
         # Définir la couleur en RGB
         self.color = (100, 100, 100)  
         # Définir le rectangle
@@ -180,7 +180,7 @@ class Basic_Projectile(Projectile):
 class Laser_Turret(Turret):
     
     def __init__(self, jeu, x, y):
-        super().__init__(jeu, x, y, vie = 125, degats= 0.02, portee=750, cadence=4, prix=200, name = "Tourelle_Laser")
+        super().__init__(jeu, x, y, vie = 125, degats= 0.03, portee=750, cadence=4, prix=200, name = "Tourelle_Laser")
         self.image = pg.image.load("assets/images/turrets/laser_turret.png").convert_alpha()
         self.image = pg.transform.scale(self.image, (75, 100))
         self.position[0] = (self.position[0] - self.image.get_width()// 2) 
@@ -203,14 +203,14 @@ class Laser_Turret(Turret):
                     return Laser_Projectile(jeu=self.jeu, x=self.position[0]+self.rect.width, y=self.position[1]+self.rect.height//2 -5, degats=self.degats)
             return None
         else:
-            if (time.time() - self.disabled_start)  >= (self.disabled_duration + self.last_shot + self.cadence - self.disabled_start):
+            if (time.time() - self.disabled_start)  >= self.disabled_duration:
                 self.is_disabled = False
                 self.disabled_duration = 0
      
 class Laser_Projectile(Projectile): 
    
     def __init__(self, jeu, x, y, degats):
-        super().__init__(jeu, x, y, degats, vitesse = 1, name="basic_projectile")
+        super().__init__(jeu, x, y, degats, vitesse = 3, name="basic_projectile")
         # Définir la couleur en RGB
         self.color = (255, 0, 0)  
         # Définir le rectangle
@@ -233,8 +233,8 @@ class Laser_Projectile(Projectile):
         
         if self.height_substraction >= 60:
             self.height_substraction = 0
-            self.rect.height -= 1
-            self.rect2.height -= 1
+            self.rect.height -= 1 *self.vitesse
+            self.rect2.height -= 1*self.vitesse
             self.rect.y = self.position[1] + 2
             self.rect2.y = self.position[1] + 6
             
@@ -257,6 +257,7 @@ class Plasma_Turret(Turret):
         self.jeu.game_entities_list.append(self.plasma_projectile)
     
     def shoot(self):
+        self.last_shot = time.time()
         if not self.is_disabled:
             shoot = False
             for entity in self.jeu.game_entities_list:
@@ -274,7 +275,8 @@ class Plasma_Turret(Turret):
                 
             return None
         else:
-            if (time.time() - self.disabled_start)  >= (self.disabled_duration + self.last_shot + self.cadence - self.disabled_start):
+            self.plasma_projectile.state = "unactive"
+            if (time.time() - self.disabled_start)  >= self.disabled_duration:
                 self.is_disabled = False
                 self.disabled_duration = 0
     
@@ -363,14 +365,14 @@ class BlackHole_Turret(Turret):
                     return BlackHole_Projectile(jeu=self.jeu, x=self.position[0]+self.rect.width, y=self.position[1]+self.rect.height//2 -5, degats=self.degats)
             return None
         else:
-            if (time.time() - self.disabled_start)  >= (self.disabled_duration + self.last_shot + self.cadence - self.disabled_start):
+            if (time.time() - self.disabled_start)  >= self.disabled_duration:
                 self.is_disabled = False
                 self.disabled_duration = 0
 
 class BlackHole_Projectile(Projectile):
         
         def __init__(self, jeu, x, y, degats):
-            super().__init__(jeu, x, y, degats, vitesse = 1, name="blackHole_projectile")
+            super().__init__(jeu, x, y, degats, vitesse = 5, name="blackHole_projectile")
             self.color = (0, 0, 0)  
             self.rect = pg.Rect(self.position[0], self.position[1], 24, 12)  # x, y, largeur, hauteur
             self.last_time = time.time()
@@ -460,15 +462,22 @@ class Shield(Turret):
         self.rect.x, self.rect.y = self.position[0], self.position[1]
     
     def shoot(self):
+        self.last_shot = time.time()
         if self.is_disabled:
-            self.image = pg.image.load("assets/images/turrets/shield/diseable_shield.png").convert_alpha()
-            if (time.time() - self.disabled_start)  >= (self.disabled_duration + self.last_shot + self.cadence - self.disabled_start):
+            self.image = pg.image.load("assets/images/turrets/shield/disabled_shield.png").convert_alpha()
+            self.image = pg.transform.scale(self.image, (75, 100))
+            self.rect.x, self.rect.y = (0, 0)
+            if (time.time() - self.disabled_start)  >= self.disabled_duration:
                 self.is_disabled = False
                 self.disabled_duration = 0
+                self.image = pg.image.load("assets/images/turrets/shield/shield.png").convert_alpha()
+                self.image = pg.transform.scale(self.image, (75, 100))
+                self.rect.x, self.rect.y = self.position[0], self.position[1]
+                
                 
 class Omni_Turret(Turret):
         def __init__(self, jeu, x, y):
-            super().__init__(jeu, x, y, vie = 200, degats= 5, portee="inf", cadence=0.5, prix=450, name = "Tourelle_Omni")
+            super().__init__(jeu, x, y, vie = 200, degats= 5, portee="inf", cadence=1.5, prix=450, name = "Tourelle_Omni")
             self.image = pg.image.load("assets/images/turrets/omni_turret.png").convert_alpha()
             self.image = pg.transform.scale(self.image, (75, 100))
             self.position[0] = (self.position[0] - self.image.get_width()// 2) 
@@ -490,41 +499,41 @@ class Omni_Turret(Turret):
                 if shoot:
                     if time.time() - self.last_shot >= self.cadence:
                         self.last_shot = time.time()
-                        return Omni_Projectile(jeu=self.jeu, x=self.position[0]+self.rect.width/2, y=self.position[1]+self.rect.height/2 , degats=self.degats, cible = cible)
+                        return Omni_Projectile(jeu=self.jeu, x=self.position[0]+self.rect.width//2, y=self.position[1]+self.rect.height//2 , degats=self.degats, cible = cible)
                 return None
             else:
-                if (time.time() - self.disabled_start)  >= (self.disabled_duration + self.last_shot + self.cadence - self.disabled_start):
+                if (time.time() - self.disabled_start)  >= self.disabled_duration:
                     self.is_disabled = False
                     self.disabled_duration = 0
         
 class Omni_Projectile(Projectile):
     
     def __init__(self, jeu, x, y, degats, cible):
-        super().__init__(jeu, x, y, degats, vitesse = 2, name="omni_projectile")
+        super().__init__(jeu, x, y, degats, vitesse = 8, name="omni_projectile")
         self.image = pg.image.load("assets/images/projectiles/omni_projectile.png").convert_alpha()
         self.image = pg.transform.scale(self.image, (20*3, 5*3))
         self.rect = self.image.get_rect()
         self.cible = cible
         self.vx, self.vy = 0, 0
+
+        
     def move(self):
         if self.is_colliding(self.cible):
             self.cible.get_damage(self.degats)
             self.is_dead = True
         else:
-            if self.position[0] -self.vitesse >= self.cible.position[0] + self.cible.rect.width/2:
-                vx = -self.vitesse
-            elif self.position[0] + self.vitesse <= self.cible.position[0] + self.cible.rect.width/2:
-                vx = self.vitesse
-            else:
-                vx = 0
+            dx = self.cible.position[0] + self.cible.rect.width/2 - self.position[0]
+            dy = self.cible.position[1] + self.cible.rect.height/2 - self.position[1]
             
+            distance = (dx**2 + dy**2)**0.5  # Calculate the distance between the projectile and the target
             
-            if self.position[1] -self.vitesse >= self.cible.position[1] + self.cible.rect.height/2:
-                vy = -self.vitesse
-            elif self.position[1] + self.vitesse <= self.cible.position[1] + self.cible.rect.height/2:
-                vy = self.vitesse
-            else:
-                vy = 0
+            # Normalize the direction vector
+            dx /= distance
+            dy /= distance
+            
+            # Multiply the direction by the speed to get the velocity
+            vx = self.vitesse * dx
+            vy = self.vitesse * dy
             
             self.vx, self.vy = vx, vy
             
@@ -534,7 +543,6 @@ class Omni_Projectile(Projectile):
             
             if self.position[0] > self.jeu.taille_fenetre[0] or self.position[0] < 0:
                 self.is_dead = True
-    
 
     def render(self, fenetre):
         angle = math.degrees(math.atan2(self.vy, self.vx)) 

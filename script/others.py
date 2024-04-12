@@ -39,12 +39,13 @@ class Animation(pg.sprite.Sprite):
             self.current_frame = (self.current_frame + 1) % len(self.images)
             self.image = self.images[self.current_frame]
             
-        if self.loop == False and self.current_frame == self.nb_images - 1:
+        if self.loop == False:
             if self.duration != 0:
-                if pg.time.get_ticks() - self.start_timer > self.duration:
+                if pg.time.get_ticks() - self.start_timer > self.duration * 1000:
                     self.is_dead = True
             else:
-                self.is_dead = True
+                if self.current_frame == self.nb_images - 1:
+                    self.is_dead = True
     
     def render(self, fenetre):
 

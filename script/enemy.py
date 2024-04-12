@@ -274,7 +274,7 @@ class Tank_Bot(Bot):
 class EMP_Bot(Bot):
     def __init__(self, jeu, x, y, id):
         super().__init__(jeu, x, y, id, vie = 100, degats=25, vitesse= 0.1, portee = 0, cadence = 20, path ="enemy/emp_bot_frames/frame_", name="EMP_Bot")
-        self.pos_effect_list = [] # liste des positions des effets
+        self.affected_turret = [] # liste des positions des effets
 
     def update(self):
         self.animation.update()
@@ -290,17 +290,19 @@ class EMP_Bot(Bot):
                 if isinstance(entity, turret.Turret) and self.rect.colliderect((entity.rect.x + self.portee, entity.rect.y, entity.rect.width, entity.rect.height)):
                     self.entity_list.sort(key=lambda turret: turret.position[1])
                     for entity_2 in self.entity_list:
-                        if isinstance(entity_2, turret.Turret) and entity_2.position[1] == entity.position[1]:
-                            self.pos_effect_list.append((entity_2.rect.x, entity_2.rect.y - entity_2.rect.height))
+                        if isinstance(entity_2, turret.Turret) and entity_2.position[1] == entity.position[1] and entity_2.position[0]  <= self.position[0] - self.rect.width:
+                            self.affected_turret.append(entity_2)
                             entity_2.get_damage(self.degats)
                             entity_2.is_disabled = True
                             entity_2.disabled_start = time.time()
-                            entity_2.disabled_duration = 10
+                            entity_2.disabled_duration = (10 + entity_2.last_shot + entity_2.cadence - entity_2.disabled_start)
                             
                     self.last_shot = time.time()
                     self.entity_list.append(others.Animation(25, "projectiles/emp_imulse_frames/frame_", self.rect.x - 1000, self.rect.y - self.rect.height, (1000, 250), flip=True, loop= False, fps=90))
                     self.is_dead = True
-                    print(self.pos_effect_list)
+                    
+                    for turret_ in self.affected_turret:
+                        self.entity_list.append(others.Animation(11, "projectiles/turret_desactivation_frames/frame_", turret_.position[0] - 10, turret_.position[1] -10 , (100, 120), flip=False, loop= False, fps=90, duration= turret_.disabled_duration))
                     return
 
 
