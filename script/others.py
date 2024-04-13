@@ -39,7 +39,6 @@ class Animation(pg.sprite.Sprite):
         now = pg.time.get_ticks()
         if self.entity != None:
             if self.entity.is_dead:
-                print("test")
                 self.is_dead = True
                 return 
         if now - self.last_update > 9000 // self.fps:
@@ -63,7 +62,7 @@ class Animation(pg.sprite.Sprite):
         #pg.draw.rect(fenetre, (255,0,0), (self.rect.x, self.rect.y, self.rect.width, self.rect.height), 1)
         
         fenetre.blit(self.image, self.rect)
-        if self.loop == False:
+        if self.loop == False and self.duration == 0:
             self.jeu.render_shop_interface()
             self.jeu.red_cross_draw()
 

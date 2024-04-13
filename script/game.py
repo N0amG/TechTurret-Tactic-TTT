@@ -194,7 +194,7 @@ class Game:
             #---------------------------------------------
             if self.debug_bot_timer is not None:
                 if time.time() - self.debug_bot_timer >= 5 :
-                    self.bot_wave_spawner.manual_spawn(self.matrice_bot[2][0][1], self.matrice_bot[2][0][0], "kamikaze")
+                    self.bot_wave_spawner.manual_spawn(self.matrice_bot[2][1][1], self.matrice_bot[2][0][0], "kamikaze")
                     self.debug_bot_timer = None
             #---------------------------------------------
             

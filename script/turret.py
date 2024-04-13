@@ -164,7 +164,7 @@ class Basic_Turret(Turret):
                 
 class Basic_Projectile(Projectile): 
     def __init__(self, jeu, x, y, degats):
-        super().__init__(jeu, x, y, degats, vitesse = 5, name="basic_projectile")
+        super().__init__(jeu, x, y, degats, vitesse = 2, name="basic_projectile")
         # Définir la couleur en RGB
         self.color = (100, 100, 100)  
         # Définir le rectangle
@@ -210,7 +210,7 @@ class Laser_Turret(Turret):
 class Laser_Projectile(Projectile): 
    
     def __init__(self, jeu, x, y, degats):
-        super().__init__(jeu, x, y, degats, vitesse = 3, name="basic_projectile")
+        super().__init__(jeu, x, y, degats, vitesse = 1, name="basic_projectile")
         # Définir la couleur en RGB
         self.color = (255, 0, 0)  
         # Définir le rectangle
@@ -372,7 +372,7 @@ class BlackHole_Turret(Turret):
 class BlackHole_Projectile(Projectile):
         
         def __init__(self, jeu, x, y, degats):
-            super().__init__(jeu, x, y, degats, vitesse = 5, name="blackHole_projectile")
+            super().__init__(jeu, x, y, degats, vitesse = 2, name="blackHole_projectile")
             self.color = (0, 0, 0)  
             self.rect = pg.Rect(self.position[0], self.position[1], 24, 12)  # x, y, largeur, hauteur
             self.last_time = time.time()
@@ -466,7 +466,7 @@ class Shield(Turret):
         if self.is_disabled:
             self.image = pg.image.load("assets/images/turrets/shield/disabled_shield.png").convert_alpha()
             self.image = pg.transform.scale(self.image, (75, 100))
-            self.rect.x, self.rect.y = (0, 0)
+            self.rect.x, self.rect.y = (-100, -100)
             if (time.time() - self.disabled_start)  >= self.disabled_duration:
                 self.is_disabled = False
                 self.disabled_duration = 0
@@ -509,7 +509,7 @@ class Omni_Turret(Turret):
 class Omni_Projectile(Projectile):
     
     def __init__(self, jeu, x, y, degats, cible):
-        super().__init__(jeu, x, y, degats, vitesse = 8, name="omni_projectile")
+        super().__init__(jeu, x, y, degats, vitesse = 2.5, name="omni_projectile")
         self.image = pg.image.load("assets/images/projectiles/omni_projectile.png").convert_alpha()
         self.image = pg.transform.scale(self.image, (20*3, 5*3))
         self.rect = self.image.get_rect()
