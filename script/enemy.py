@@ -253,7 +253,7 @@ class Kamikaze_Bot(Bot):
 
 class Tank_Bot(Bot):
     def __init__(self, jeu, x, y, id):
-        super().__init__(jeu, x, y, id, vie = 400, degats=50, vitesse= 0.03, portee = 0, cadence = 6, path ="enemy/tank_bot_frames/frame_", name="Tank_Bot", fps= 30)
+        super().__init__(jeu, x, y, id, vie = 400, degats=50, vitesse= 0.03, portee = 0, cadence = 6, coef= 3.5, path ="enemy/tank_bot/tank_bot_frames/frame_", name="Tank_Bot", fps= 40)
         self.impact_list = []
     
     def update(self):
@@ -264,6 +264,7 @@ class Tank_Bot(Bot):
             impact.update()
             if impact.is_dead:
                 self.impact_list.remove(impact)
+                self.animation.get_images(8, "enemy/tank_bot/tank_bot_frames/frame_")
     
     def shoot(self):
         if time.time() - self.last_shot >= self.cadence:
@@ -272,6 +273,7 @@ class Tank_Bot(Bot):
                     entity.get_damage(self.degats)
                     self.last_shot = time.time()
                     impact = others.Animation(self.jeu, 16, "projectiles/impact_frames/frame_", self.rect.x - 2 * self.rect.width, self.rect.y - self.rect.height, (250, 250), flip=False, loop= False, fps=120)
+                    self.animation.get_images(8, "enemy/tank_bot/tank_bot_attack_frames/frame_")
                     self.impact_list.append(impact)
                     self.entity_list.append(impact)
 
@@ -311,7 +313,7 @@ class EMP_Bot(Bot):
 
 class Incinerator_Bot(Bot):
     def __init__(self, jeu, x, y, id):
-        super().__init__(jeu, x, y, id, vie = 200, degats=0.3, vitesse= 0.08, portee = 210, cadence = 5, path ="enemy/incinerator_bot/unactive_incinerator_bot/frame_", name="Incinerator_Bot")
+        super().__init__(jeu, x, y, id, vie = 150, degats=0.4, vitesse= 0.08, portee = 210, cadence = 5, path ="enemy/incinerator_bot/unactive_incinerator_bot/frame_", name="Incinerator_Bot")
         self.fire_projectile = Fire_Projectile(jeu=self.jeu, tourelle = self, x=self.position[0]+self.rect.width, y=self.position[1]+self.rect.height//2, degats=self.degats)
         self.jeu.game_entities_list.append(self.fire_projectile)
     
