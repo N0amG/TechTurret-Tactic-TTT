@@ -235,7 +235,7 @@ class Bullet:
 
 class Kamikaze_Bot(Bot):
     def __init__(self, jeu, x, y, id):
-        super().__init__(jeu, x, y, id, vie = 50, degats=150, vitesse= 0.3, portee = 0, cadence = 0, path ="enemy/kamikaze_bot_frames/frame_", name="Kamikaze_Bot")
+        super().__init__(jeu, x, y, id, vie = 50, degats=150, vitesse= 0.2, portee = 0, cadence = 0, path ="enemy/kamikaze_bot_frames/frame_", name="Kamikaze_Bot")
     
     def attack(self, cible):
         if self.rect.colliderect(cible.rect):
