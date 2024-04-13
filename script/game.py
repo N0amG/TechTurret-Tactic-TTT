@@ -153,6 +153,7 @@ class Game:
                                         if isinstance(entity, turret.Turret) and entity.rect.collidepoint(x,y):
                                             # Supprimer la tourelle de la liste des entités du jeu
                                             self.kamas += entity.prix // 2
+                                            entity.is_dead = True
                                             self.game_entities_list.remove(entity)
                                             break
                         
@@ -192,7 +193,7 @@ class Game:
             # Réapparition manuel d'un bot pour débuger la tourelle BlackHole
             #---------------------------------------------
             if self.debug_bot_timer is not None:
-                if time.time() - self.debug_bot_timer >= 8 :
+                if time.time() - self.debug_bot_timer >= 5 :
                     self.bot_wave_spawner.manual_spawn(self.matrice_bot[2][0][1], self.matrice_bot[2][0][0], "kamikaze")
                     self.debug_bot_timer = None
             #---------------------------------------------
@@ -386,10 +387,6 @@ class Game:
 
             if self.wave_ended and cond:
                 self.next_wave_button_render()
-            
-            
-            self.render_shop_interface()
-            self.red_cross_draw()
             
         if self.paused:
             self.render_pause()

@@ -60,7 +60,7 @@ class Bot(pg.sprite.Sprite):
         self.jeu = jeu
         self.entity_list = jeu.game_entities_list
         self.position = [x, y]
-        self.animation = others.Animation(nb_images, path, x, y, (22*coef, 28*coef), flip, fps)
+        self.animation = others.Animation(self.jeu, nb_images, path, x, y, (22*coef, 28*coef), flip, fps)
         self.image = self.animation.image
         self.position[0] = (self.position[0] - self.image.get_width()// 2)
         self.position[1] = (self.position[1] - self.image.get_height()// 2) 
@@ -244,7 +244,7 @@ class Kamikaze_Bot(Bot):
                 if isinstance(entity, turret.Turret) and self.rect.colliderect(entity.rect):
                     entity.get_damage(self.degats)
             self.is_dead = True
-            self.entity_list.append(others.Animation(17, "projectiles/explosion_frames/frame_", self.rect.x, self.rect.y, (250, 250), flip=False, loop= False, fps=120))
+            self.entity_list.append(others.Animation(self.jeu, 17, "projectiles/explosion_frames/frame_", self.rect.x, self.rect.y, (250, 250), flip=False, loop= False, fps=120))
 
 
 class Tank_Bot(Bot):
@@ -267,7 +267,7 @@ class Tank_Bot(Bot):
                 if isinstance(entity, turret.Turret) and self.rect.colliderect((entity.rect.x + self.portee, entity.rect.y, entity.rect.width, entity.rect.height)):
                     entity.get_damage(self.degats)
                     self.last_shot = time.time()
-                    impact = others.Animation(16, "projectiles/impact_frames/frame_", self.rect.x - 2 * self.rect.width, self.rect.y - self.rect.height, (250, 250), flip=False, loop= False, fps=120)
+                    impact = others.Animation(self.jeu, 16, "projectiles/impact_frames/frame_", self.rect.x - 2 * self.rect.width, self.rect.y - self.rect.height, (250, 250), flip=False, loop= False, fps=120)
                     self.impact_list.append(impact)
                     self.entity_list.append(impact)
 
@@ -298,11 +298,11 @@ class EMP_Bot(Bot):
                             entity_2.disabled_duration = (10 + entity_2.last_shot + entity_2.cadence - entity_2.disabled_start)
                             
                     self.last_shot = time.time()
-                    self.entity_list.append(others.Animation(25, "projectiles/emp_imulse_frames/frame_", self.rect.x - 1000, self.rect.y - self.rect.height, (1000, 250), flip=True, loop= False, fps=90))
+                    self.entity_list.append(others.Animation(self.jeu, 25, "projectiles/emp_imulse_frames/frame_", self.rect.x - 1000, self.rect.y - self.rect.height, (1000, 250), flip=True, loop= False, fps=90))
                     self.is_dead = True
                     
                     for turret_ in self.affected_turret:
-                        self.entity_list.append(others.Animation(11, "projectiles/turret_desactivation_frames/frame_", turret_.position[0] - 10, turret_.position[1] -10 , (100, 120), flip=False, loop= False, fps=90, duration= turret_.disabled_duration))
+                        self.entity_list.append(others.Animation(self.jeu, 11, "projectiles/turret_desactivation_frames/frame_", turret_.position[0] - 10, turret_.position[1] -10 , (100, 120), flip=False, loop= False, fps=90, duration= turret_.disabled_duration, entity= turret_))
                     return
 
 

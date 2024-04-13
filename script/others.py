@@ -3,17 +3,20 @@ import pygame as pg
 
 class Animation(pg.sprite.Sprite):
     # path : str -> exemple : 'enemy/drone/frame_'
-    def __init__(self, nb_images : int, path : str, x : int, y : int , proportion : tuple, flip: bool, fps : int = 70 , loop : bool = True, duration : int = 0):
+    def __init__(self, jeu, nb_images : int, path : str, x : int, y : int , proportion : tuple, flip: bool, fps : int = 70 ,
+                starting_frame : int = 0, loop : bool = True, duration : int = 0, entity = None):
         super().__init__()
+        self.jeu = jeu
+        self.entity = entity
         self.proportion = proportion
         self.fps = fps
         self.flip = flip
         self.loop = loop
-        self.current_frame = 0
+        self.current_frame = starting_frame
         self.last_update = pg.time.get_ticks()
         self.nb_images = nb_images
         self.images = self.get_images(nb_images, path)
-        self.image = self.images[0]
+        self.image = self.images[self.current_frame]
         self.rect = self.image.get_rect()
         self.rect.x = x
         self.rect.y = y
@@ -34,6 +37,11 @@ class Animation(pg.sprite.Sprite):
     
     def update(self):
         now = pg.time.get_ticks()
+        if self.entity != None:
+            if self.entity.is_dead:
+                print("test")
+                self.is_dead = True
+                return 
         if now - self.last_update > 9000 // self.fps:
             self.last_update = now
             self.current_frame = (self.current_frame + 1) % len(self.images)
@@ -45,7 +53,9 @@ class Animation(pg.sprite.Sprite):
                     self.is_dead = True
             else:
                 if self.current_frame == self.nb_images - 1:
+                    #évite les artefacts visuels
                     self.is_dead = True
+                    
     
     def render(self, fenetre):
 
@@ -53,6 +63,9 @@ class Animation(pg.sprite.Sprite):
         #pg.draw.rect(fenetre, (255,0,0), (self.rect.x, self.rect.y, self.rect.width, self.rect.height), 1)
         
         fenetre.blit(self.image, self.rect)
+        if self.loop == False:
+            self.jeu.render_shop_interface()
+            self.jeu.red_cross_draw()
 
 
 
