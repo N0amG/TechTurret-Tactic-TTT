@@ -2,10 +2,10 @@ TechTurret Tactic - TTT
 
 ---------------
 
-Version 0.5.7-dev
+Version 0.5.8-dev
 
-ajout du bot emp
-amélioration de la trajectoire des fleche des omnitourelle
+ajout du bot incinerator
+optimisation
 
 ----------------
 
