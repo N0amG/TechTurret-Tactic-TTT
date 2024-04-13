@@ -6,6 +6,8 @@ import random as rd
 import time
 
 from abc import ABC, abstractmethod
+from pygame import BLEND_RGB_ADD
+
 
 class Bot_Wave_Spawner:
     def __init__(self, jeu):
@@ -52,6 +54,8 @@ class Bot_Wave_Spawner:
             self.jeu.game_entities_list.append(Tank_Bot(self.jeu, y, x, self.id))
         elif bot_type == "emp":
             self.jeu.game_entities_list.append(EMP_Bot(self.jeu, y, x, self.id))
+        elif bot_type == "incinerator":
+            self.jeu.game_entities_list.append(Incinerator_Bot(self.jeu, y, x, self.id))
         self.id += 1
         self.spawned += 1
 
@@ -298,15 +302,114 @@ class EMP_Bot(Bot):
                             entity_2.disabled_duration = (10 + entity_2.last_shot + entity_2.cadence - entity_2.disabled_start)
                             
                     self.last_shot = time.time()
-                    self.entity_list.append(others.Animation(self.jeu, 25, "projectiles/emp_imulse_frames/frame_", self.rect.x - 1000, self.rect.y - self.rect.height, (1000, 250), flip=True, loop= False, fps=90))
+                    self.entity_list.append(others.Animation(self.jeu, 25, "projectiles/emp_imulse_frames/frame_", self.rect.x - 1000, self.rect.y - self.rect.height, (1000, 250), flip=True, loop= False, fps=80))
                     self.is_dead = True
                     
                     for turret_ in self.affected_turret:
-                        self.entity_list.append(others.Animation(self.jeu, 11, "projectiles/turret_desactivation_frames/frame_", turret_.position[0] - 10, turret_.position[1] -10 , (100, 120), flip=False, loop= False, fps=90, duration= turret_.disabled_duration, entity= turret_))
+                        self.entity_list.append(others.Animation(self.jeu, 11, "projectiles/turret_desactivation_frames/frame_", turret_.position[0] - 10, turret_.position[1] -10 , (100, 120), flip=False, loop= False, fps=80, duration= turret_.disabled_duration, entity= turret_))
                     return
 
+class Incinerator_Bot(Bot):
+    def __init__(self, jeu, x, y, id):
+        super().__init__(jeu, x, y, id, vie = 200, degats=0.3, vitesse= 0.08, portee = 210, cadence = 5, path ="enemy/incinerator_bot/unactive_incinerator_bot/frame_", name="Incinerator_Bot")
+        self.fire_projectile = Fire_Projectile(jeu=self.jeu, tourelle = self, x=self.position[0]+self.rect.width, y=self.position[1]+self.rect.height//2, degats=self.degats)
+        self.jeu.game_entities_list.append(self.fire_projectile)
+    
+    def update(self):
+        #actualisation de la position du projectile
+        self.fire_projectile.position = [self.position[0] , self.position[1]+self.rect.height//1.5]
+        self.fire_projectile.rect.x, self.fire_projectile.rect.y = self.fire_projectile.position[0] - self.fire_projectile.rect.width + 5, self.fire_projectile.position[1] - self.fire_projectile.rect.height//2
+        self.animation.update()
+        self.shoot()
+        self.fire_projectile.move()
+                    
+    def shoot(self):
+        self.last_shot = time.time()
+        shoot = False
+        for entity in self.jeu.game_entities_list:
+            if isinstance(entity, turret.Turret):
+                if entity.position[0] >= self.position[0] - self.portee and self.rect.colliderect((self.position[0], entity.position[1], entity.rect.width, entity.rect.height)):
+                    shoot = True
+                    break
+        if shoot:
+            self.fire_projectile.state = "active"
+            self.animation.get_images(8, "enemy/incinerator_bot/active_incinerator_bot/frame_")
 
+            
+        else:
+            self.fire_projectile.state = "unactive"
+            self.animation.get_images(8, "enemy/incinerator_bot/unactive_incinerator_bot/frame_")
+            self.fire_projectile.particles = []
+            
+        return None
+
+    
+class Fire_Projectile:
+    def __init__(self, jeu, tourelle, x, y, degats, vitesse = 1, name="fire_projectile"):
+        self.jeu = jeu
+        self.position = [x, y]
+        self.degats = degats
+        self.vitesse = vitesse
+        self.name = name
+        self.is_dead = False
+        self.rect = pg.Rect(self.position[0], self.position[1]-10, 135, 24)
+        self.dispersion = rd.randint(-1, 1) / 2
+        # [loc, velocity, timer]
+        self.particles = []
+        self.last_particle = time.time()
+        self.tourelle = tourelle
+        self.cible_x = 0
+        self.state = "unactive" or "active"
+        
+    def circle_surf(self, radius, color):
+        surf = pg.Surface((radius * 2, radius * 2))
+        pg.draw.circle(surf, color, (radius, radius), radius)
+        surf.set_colorkey((0, 0, 0))
+        return surf
+
+    def render_debug(self, fenetre):
+        pg.draw.rect(fenetre, (255, 0, 0), self.rect)
+    
+    def render(self, fenetre):
+        if self.tourelle not in self.jeu.game_entities_list:
+            self.is_dead = True
+            self.jeu.game_entities_list.remove(self)
+            return
+        
+        #self.render_debug(fenetre)
+        
+        if self.state == "active":
+            self.particles.append([[self.position[0], self.position[1]], [2, rd.randint(0, 10) / 12 - 0.5], rd.randint(6, 9)])
+
+            for particle in self.particles:
+                particle[0][0] -= particle[1][0]
+                particle[0][1] += particle[1][1]
+                particle[2] -= 0.1
+                pg.draw.circle(fenetre, (255, 255, 25), [int(particle[0][0]), int(particle[0][1])], int(particle[2]))
+
+                radius = particle[2] * 2
+                fenetre.blit(self.circle_surf(radius, (100, 20, 20)), (int(particle[0][0] - radius), int(particle[0][1] - radius)), special_flags=BLEND_RGB_ADD)
+
+                if particle[2] <= 0 or particle[0][0] <= self.cible_x:
+                    self.particles.remove(particle)
                    
+    def move(self):
+        if self.state == "active":
+            for entity in self.jeu.game_entities_list:
+                if isinstance(entity, turret.Turret):
+                    if self.is_colliding(entity):
+                        distance = ((entity.position[0] - self.position[0])**2 + (entity.position[1] - self.position[1])**2)**0.5
+                        degat =  max(0, (self.tourelle.portee - distance) / self.tourelle.portee) * self.degats  # Les dégâts augmentent lorsque l'ennemi se rapproche
+                        self.cible_x = entity.position[0]
+                        return entity.get_damage(degat)
+
+            if self.position[0] < 0:  # Check if the projectile has passed the left edge of the window
+                self.is_dead = True   
+
+    def is_colliding(self, cible):
+        if self.rect.colliderect(cible.rect):
+            return True
+        else: return False
 
 if __name__ == "__main__":
     import game

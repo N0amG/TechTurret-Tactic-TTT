@@ -15,7 +15,7 @@ class Animation(pg.sprite.Sprite):
         self.current_frame = starting_frame
         self.last_update = pg.time.get_ticks()
         self.nb_images = nb_images
-        self.images = self.get_images(nb_images, path)
+        self.get_images(nb_images, path)
         self.image = self.images[self.current_frame]
         self.rect = self.image.get_rect()
         self.rect.x = x
@@ -33,7 +33,7 @@ class Animation(pg.sprite.Sprite):
                 image = pg.transform.flip(image, True, False)
             
             images.append(image.convert_alpha())
-        return images
+        self.images = images
     
     def update(self):
         now = pg.time.get_ticks()

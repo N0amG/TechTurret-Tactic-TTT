@@ -246,7 +246,7 @@ class Laser_Projectile(Projectile):
 class Plasma_Turret(Turret):
     
     def __init__(self, jeu, x, y):
-        super().__init__(jeu, x, y, vie = 100, degats= 0.1, portee=210, cadence=0, prix=350, name = "Tourelle_Plasma")
+        super().__init__(jeu, x, y, vie = 100, degats= 0.15, portee=210, cadence=0, prix=350, name = "Tourelle_Plasma")
         self.image = pg.image.load("assets/images/turrets/plasma_turret.png").convert_alpha()
         self.image = pg.transform.scale(self.image, (75, 100))
         self.position[0] = (self.position[0] - self.image.get_width()// 2) 
@@ -290,6 +290,7 @@ class Plasma_Projectile(Projectile):
         self.last_particle = time.time()
         self.tourelle = tourelle
         self.cible_x = 0
+        self.cible_width = 0
         self.state = "unactive" or "active"
         
     def circle_surf(self, radius, color):
@@ -321,7 +322,7 @@ class Plasma_Projectile(Projectile):
                 radius = particle[2] * 2
                 fenetre.blit(self.circle_surf(radius, (20, 20, 60)), (int(particle[0][0] - radius), int(particle[0][1] - radius)), special_flags=BLEND_RGB_ADD)
 
-                if particle[2] <= 0 or particle[0][0] >= self.cible_x:
+                if particle[2] <= 0 or particle[0][0] >= self.cible_x + self.cible_width:
                     self.particles.remove(particle)
                    
     def move(self):
@@ -332,6 +333,7 @@ class Plasma_Projectile(Projectile):
                         distance = ((bot.position[0] - self.position[0])**2 + (bot.position[1] - self.position[1])**2)**0.5
                         degat =  max(0, (self.tourelle.portee - distance) / self.tourelle.portee) * self.degats  # Les dégâts augmentent lorsque l'ennemi se rapproche
                         self.cible_x = bot.position[0]
+                        self.cible_width = bot.rect.width
                         return bot.get_damage(degat)
 
             if self.position[0] > self.jeu.taille_fenetre[0]:
@@ -509,7 +511,7 @@ class Omni_Turret(Turret):
 class Omni_Projectile(Projectile):
     
     def __init__(self, jeu, x, y, degats, cible):
-        super().__init__(jeu, x, y, degats, vitesse = 2.5, name="omni_projectile")
+        super().__init__(jeu, x, y, degats, vitesse = 5, name="omni_projectile")
         self.image = pg.image.load("assets/images/projectiles/omni_projectile.png").convert_alpha()
         self.image = pg.transform.scale(self.image, (20*3, 5*3))
         self.rect = self.image.get_rect()
