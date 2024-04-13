@@ -201,6 +201,7 @@ class Bullet:
    
     def __init__(self, jeu, x, y, degats, name="bullet"):
         self.jeu = jeu
+        self.entity_list = jeu.game_entities_list
         self.position = [x, y]
         self.degats = degats
         self.vitesse = 1
@@ -245,7 +246,6 @@ class Kamikaze_Bot(Bot):
                     entity.get_damage(self.degats)
             self.is_dead = True
             self.entity_list.append(others.Animation(self.jeu, 17, "projectiles/explosion_frames/frame_", self.rect.x, self.rect.y, (250, 250), flip=False, loop= False, fps=120))
-
 
 class Tank_Bot(Bot):
     def __init__(self, jeu, x, y, id):
