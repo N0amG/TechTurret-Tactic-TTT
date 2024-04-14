@@ -96,11 +96,11 @@ class Game:
         self.bot_wave_spawner = enemy.Bot_Wave_Spawner(jeu=self)
         
         #test et placement des éléments    
-        self.game_entities_list.append(turret.Shield(self, self.matrice_tourelle[2][7][1], self.matrice_tourelle[2][8][0]))
+        self.game_entities_list.append(turret.Shield(self, self.matrice_tourelle[2][7][1], self.matrice_tourelle[2][9][0]))
         self.game_entities_list.append(turret.Plasma_Turret(self, self.matrice_tourelle[2][1][1], self.matrice_tourelle[2][1][0]))
-        [self.game_entities_list.append(turret.Omni_Turret(self ,self.matrice_tourelle[2][i][1], self.matrice_tourelle[2][i][0])) for i in range(4,5)]
+        [self.game_entities_list.append(turret.Basic_Turret(self ,self.matrice_tourelle[2][i][1], self.matrice_tourelle[2][i][0])) for i in range(4,5)]
 
-        self.bot_wave_spawner.manual_spawn(self.matrice_bot[2][0][1], self.matrice_bot[2][0][0], "tank")
+        self.bot_wave_spawner.manual_spawn(self.matrice_bot[2][0][1], self.matrice_bot[2][0][0], "ender")
         
         #self.bot_wave_spawner.manual_spawn(self.matrice_bot[2][1][1], self.matrice_bot[2][1][0], "basic")
         #self.debug_bot_timer = time.time()

@@ -161,7 +161,6 @@ class Basic_Turret(Turret):
                 self.is_disabled = False
                 self.disabled_duration = 0
         
-                
 class Basic_Projectile(Projectile): 
     def __init__(self, jeu, x, y, degats):
         super().__init__(jeu, x, y, degats, vitesse = 2, name="basic_projectile")
@@ -177,10 +176,11 @@ class Basic_Projectile(Projectile):
                 return True
         else: return False
 
+
 class Laser_Turret(Turret):
     
     def __init__(self, jeu, x, y):
-        super().__init__(jeu, x, y, vie = 125, degats= 0.03, portee=750, cadence=4, prix=200, name = "Tourelle_Laser")
+        super().__init__(jeu, x, y, vie = 125, degats= 0.02, portee=750, cadence=4, prix=200, name = "Tourelle_Laser")
         self.image = pg.image.load("assets/images/turrets/laser_turret.png").convert_alpha()
         self.image = pg.transform.scale(self.image, (75, 100))
         self.position[0] = (self.position[0] - self.image.get_width()// 2) 
@@ -343,7 +343,7 @@ class Plasma_Projectile(Projectile):
 class BlackHole_Turret(Turret):
     
     def __init__(self, jeu, x, y):
-        super().__init__(jeu, x, y, vie = 300, degats= 0.02, portee=1000, cadence=20, prix=300, name = "Tourelle_Blackhole")
+        super().__init__(jeu, x, y, vie = 300, degats= 0.02, portee=1000, cadence=15, prix=300, name = "Tourelle_Blackhole")
         self.image = pg.image.load("assets/images/turrets/blackHole_turret.png").convert_alpha()
         self.image = pg.transform.scale(self.image, (75, 100))
         self.position[0] = (self.position[0] - self.image.get_width()// 2) 
@@ -378,14 +378,14 @@ class BlackHole_Projectile(Projectile):
             self.color = (0, 0, 0)  
             self.rect = pg.Rect(self.position[0], self.position[1], 24, 12)  # x, y, largeur, hauteur
             self.last_time = time.time()
-            self.range = 500            
+            self.range = 350            
             self.is_dead = False
             self.last_time = time.time()
             self.duree = 5
             self.state = "projectile" # or "blackhole"
             self.image = pg.transform.scale(pg.image.load('assets/images/projectiles/blackhole_projectile.png'), (60, 60)).convert_alpha()
             self.target = self.find_shoot_spot()
-            self.attraction_force = 0.1
+            self.attraction_force = 0.15
         
         def find_shoot_spot(self):
             self.bot_list = []
@@ -436,9 +436,10 @@ class BlackHole_Projectile(Projectile):
                     
                     if bot.position[0] <= self.position[0] + self.range and bot.position[0] >= self.position[0] - self.range:
                         if bot.position[0] > self.position[0]:
-                            bot.position[0] -= self.attraction_force 
+                            bot.position[0] -= self.attraction_force
                         else:
-                            bot.position[0] += self.attraction_force                 
+                            bot.position[0] += self.attraction_force
+                        bot.rect.x = bot.position[0]         
         
         def render(self, fenetre):
             
@@ -479,7 +480,7 @@ class Shield(Turret):
                 
 class Omni_Turret(Turret):
         def __init__(self, jeu, x, y):
-            super().__init__(jeu, x, y, vie = 200, degats= 5, portee="inf", cadence=1.5, prix=450, name = "Tourelle_Omni")
+            super().__init__(jeu, x, y, vie = 200, degats= 5, portee="inf", cadence=1, prix=450, name = "Tourelle_Omni")
             self.image = pg.image.load("assets/images/turrets/omni_turret.png").convert_alpha()
             self.image = pg.transform.scale(self.image, (75, 100))
             self.position[0] = (self.position[0] - self.image.get_width()// 2) 
@@ -491,8 +492,9 @@ class Omni_Turret(Turret):
             if not self.is_disabled:
                 shoot = False
                 
-                self.jeu.game_entities_list.sort(key=lambda bot: bot.position[0])
-                for entity in self.jeu.game_entities_list:
+                self.entity_list = self.jeu.game_entities_list[:]
+                self.entity_list.sort(key=lambda bot: bot.position[0])
+                for entity in self.entity_list:
                     if isinstance(entity, enemy.Bot):
                         if not isinstance(entity, enemy.Drone_Bot):    
                             shoot = True

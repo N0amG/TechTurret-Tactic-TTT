@@ -3,15 +3,17 @@ import pygame as pg
 
 class Animation(pg.sprite.Sprite):
     # path : str -> exemple : 'enemy/drone/frame_'
-    def __init__(self, jeu, nb_images : int, path : str, x : int, y : int , proportion : tuple, flip: bool, fps : int = 70 ,
-                starting_frame : int = 0, loop : bool = True, duration : int = 0, entity = None):
+    def __init__(self, jeu, nb_images : int, path : str, name : str, x : int, y : int , proportion : tuple, flip: bool, fps : int = 70 ,
+                starting_frame : int = 0, loop : bool = True, duration : int = 0, reverse : bool = False, entity = None):
         super().__init__()
         self.jeu = jeu
+        self.name = name
         self.entity = entity
         self.proportion = proportion
         self.fps = fps
         self.flip = flip
         self.loop = loop
+        self.reverse = reverse
         self.current_frame = starting_frame
         self.last_update = pg.time.get_ticks()
         self.nb_images = nb_images
@@ -34,6 +36,8 @@ class Animation(pg.sprite.Sprite):
             
             images.append(image.convert_alpha())
         self.images = images
+        if self.reverse:
+            self.images = self.images[::-1]
     
     def update(self):
         now = pg.time.get_ticks()
@@ -54,7 +58,7 @@ class Animation(pg.sprite.Sprite):
                 if self.current_frame == self.nb_images - 1:
                     #évite les artefacts visuels
                     self.is_dead = True
-                    
+
     
     def render(self, fenetre):
 
@@ -62,7 +66,8 @@ class Animation(pg.sprite.Sprite):
         #pg.draw.rect(fenetre, (255,0,0), (self.rect.x, self.rect.y, self.rect.width, self.rect.height), 1)
         
         fenetre.blit(self.image, self.rect)
-        if self.loop == False and self.duration == 0:
+
+        if self.name == "impulse":
             self.jeu.render_shop_interface()
             self.jeu.red_cross_draw()
 

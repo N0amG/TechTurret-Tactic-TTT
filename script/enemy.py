@@ -42,9 +42,8 @@ class Bot_Wave_Spawner:
             return False
     
     def manual_spawn(self, y, x, bot_type):
-        if bot_type == "basic":
-            self.jeu.game_entities_list.append(Basic_Bot(self.jeu, y, x, self.id))
-        elif bot_type == "drone":
+        
+        if bot_type == "drone":
             self.jeu.game_entities_list.append(Drone_Bot(self.jeu, y, x, self.id))
         elif bot_type == "assault":
             self.jeu.game_entities_list.append(Assault_Bot(self.jeu, y, x, self.id))
@@ -56,15 +55,20 @@ class Bot_Wave_Spawner:
             self.jeu.game_entities_list.append(EMP_Bot(self.jeu, y, x, self.id))
         elif bot_type == "incinerator":
             self.jeu.game_entities_list.append(Incinerator_Bot(self.jeu, y, x, self.id))
+        elif bot_type == "ender":
+            self.jeu.game_entities_list.append(Ender_Bot(self.jeu, y, x, self.id))
+        else:
+            self.jeu.game_entities_list.append(Basic_Bot(self.jeu, y, x, self.id))
         self.id += 1
         self.spawned += 1
 
 class Bot(pg.sprite.Sprite):
-    def __init__(self, jeu, x, y, id, vie, degats, vitesse, portee, cadence, name, path, nb_images = 8, coef = 3, flip = True, fps = 90):
+    def __init__(self, jeu, x, y, id, vie, degats, vitesse, portee, cadence, name, path, nb_images = 8, coef = (66, 84), flip = True, fps = 90):
         self.jeu = jeu
         self.entity_list = jeu.game_entities_list
+        self.name = name
         self.position = [x, y]
-        self.animation = others.Animation(self.jeu, nb_images, path, x, y, (22*coef, 28*coef), flip, fps)
+        self.animation = others.Animation(self.jeu, nb_images, path, name, x, y, coef, flip, fps)
         self.image = self.animation.image
         self.position[0] = (self.position[0] - self.image.get_width()// 2)
         self.position[1] = (self.position[1] - self.image.get_height()// 2) 
@@ -78,7 +82,7 @@ class Bot(pg.sprite.Sprite):
         self.vitesse = vitesse
         self.portee = portee
         self.cadence = cadence
-        self.name = name
+
         self.id = id
         self.last_shot = time.time()-self.cadence
         self.is_dead = False
@@ -86,7 +90,6 @@ class Bot(pg.sprite.Sprite):
     def __str__(self):
         return f"Bot id : {self.id}"
     
-
     def update(self):
         self.animation.update()
     
@@ -123,12 +126,8 @@ class Bot(pg.sprite.Sprite):
     
     def render(self, fenetre):
         self.animation.render(fenetre)
-        
         # hitbox
         #pg.draw.rect(fenetre, (255,0,0), (self.rect.x, self.rect.y, self.rect.width, self.rect.height), 1)
-        
-        fenetre.blit(self.image, self.position)
-
         
         if self.vie == self.vie_max:
             return
@@ -148,21 +147,20 @@ class Bot(pg.sprite.Sprite):
         # Dessin de la barre rouge
         pg.draw.rect(fenetre, (255, 0, 0), (position_barre_rouge[0], position_barre_rouge[1], self.rect.width - largeur_barre_verte, 5))
 
-
 class Basic_Bot(Bot):
     def __init__(self, jeu, x, y, id):
-        super().__init__(jeu, x, y, id, vie = 100, degats=20, vitesse= 0.08, portee = 0, cadence = 2, path ="enemy/basic_bot_frames/frame_", name="Basic_Bot")
+        super().__init__(jeu, x, y, id, vie = 100, degats=20, vitesse= 0.05, portee = 0, cadence = 2, path ="enemy/basic_bot_frames/frame_", name="Basic_Bot")
 
 class Drone_Bot(Bot):
     def __init__(self, jeu, x, y, id):
-        super().__init__(jeu, x, y, id, vie = 25, degats=10, vitesse= 0.15, portee = 0, cadence = 0.5, path ="enemy/drone_bot_frames/frame_", name="Drone_Bot", coef = 3, flip= False, fps= 90)
+        super().__init__(jeu, x, y, id, vie = 25, degats=10, vitesse= 0.2, portee = 0, cadence = 0.5, path ="enemy/drone_bot_frames/frame_", name="Drone_Bot", coef = (66*0.9, 84*0.8), flip= False, fps= 90)
     
     def move(self):
         self.update()
         self.image = self.animation.image
         
         self.position[0] -= self.vitesse
-        self.animation.rect.x, self.animation.rect.y = self.position[0], self.position[1]
+        self.animation.rect.x, self.animation.rect.y = self.position[0], self.position[1] - self.rect.height//2
         self.rect.x, self.rect.y = self.position[0], self.position[1]
         
         for entity in self.entity_list:
@@ -180,7 +178,7 @@ class Drone_Bot(Bot):
 
 class Assault_Bot(Bot):
     def __init__(self, jeu, x, y, id):
-        super().__init__(jeu, x, y, id, vie = 200, degats=25, vitesse= 0.05, portee = 300, cadence = 5, path ="enemy/assault_bot_frames/frame_", name="Assault_Bot")
+        super().__init__(jeu, x, y, id, vie = 200, degats=25, vitesse= 0.05, portee = 300, cadence = 3, path ="enemy/assault_bot_frames/frame_", name="Assault_Bot")
         self.bullet_list = []
     
     def update(self):
@@ -240,7 +238,7 @@ class Bullet:
 
 class Kamikaze_Bot(Bot):
     def __init__(self, jeu, x, y, id):
-        super().__init__(jeu, x, y, id, vie = 50, degats=150, vitesse= 0.2, portee = 0, cadence = 0, path ="enemy/kamikaze_bot_frames/frame_", name="Kamikaze_Bot")
+        super().__init__(jeu, x, y, id, vie = 50, degats=150, vitesse= 0.15, portee = 0, cadence = 0, path ="enemy/kamikaze_bot_frames/frame_", name="Kamikaze_Bot")
     
     def attack(self, cible):
         if self.rect.colliderect(cible.rect):
@@ -249,11 +247,11 @@ class Kamikaze_Bot(Bot):
                 if isinstance(entity, turret.Turret) and self.rect.colliderect(entity.rect):
                     entity.get_damage(self.degats)
             self.is_dead = True
-            self.entity_list.append(others.Animation(self.jeu, 17, "projectiles/explosion_frames/frame_", self.rect.x, self.rect.y, (250, 250), flip=False, loop= False, fps=120))
+            self.entity_list.append(others.Animation(self.jeu, 17, "projectiles/explosion_frames/frame_", "explosion", self.rect.x, self.rect.y, (250, 250), flip=False, loop= False, fps=120))
 
 class Tank_Bot(Bot):
     def __init__(self, jeu, x, y, id):
-        super().__init__(jeu, x, y, id, vie = 400, degats=50, vitesse= 0.03, portee = 0, cadence = 6, coef= 3.5, path ="enemy/tank_bot/tank_bot_frames/frame_", name="Tank_Bot", fps= 40)
+        super().__init__(jeu, x, y, id, vie = 400, degats=50, vitesse= 0.03, portee = 0, cadence = 6, coef= (66, 84), path ="enemy/tank_bot/tank_bot_frames/frame_", name="Tank_Bot", fps= 40)
         self.impact_list = []
     
     def update(self):
@@ -272,7 +270,7 @@ class Tank_Bot(Bot):
                 if isinstance(entity, turret.Turret) and self.rect.colliderect((entity.rect.x + self.portee, entity.rect.y, entity.rect.width, entity.rect.height)):
                     entity.get_damage(self.degats)
                     self.last_shot = time.time()
-                    impact = others.Animation(self.jeu, 16, "projectiles/impact_frames/frame_", self.rect.x - 2 * self.rect.width, self.rect.y - self.rect.height, (250, 250), flip=False, loop= False, fps=120)
+                    impact = others.Animation(self.jeu, 16, "projectiles/impact_frames/frame_", "impact", self.rect.x - 2 * self.rect.width, self.rect.y - self.rect.height, (250, 250), flip=False, loop= False, fps=120)
                     self.animation.get_images(8, "enemy/tank_bot/tank_bot_attack_frames/frame_")
                     self.impact_list.append(impact)
                     self.entity_list.append(impact)
@@ -304,11 +302,11 @@ class EMP_Bot(Bot):
                             entity_2.disabled_duration = (10 + entity_2.last_shot + entity_2.cadence - entity_2.disabled_start)
                             
                     self.last_shot = time.time()
-                    self.entity_list.append(others.Animation(self.jeu, 25, "projectiles/emp_imulse_frames/frame_", self.rect.x - 1000, self.rect.y - self.rect.height, (1000, 250), flip=True, loop= False, fps=80))
+                    self.entity_list.append(others.Animation(self.jeu, 24, "projectiles/emp_imulse_frames/frame_", "impulse", self.rect.x - 1000, self.rect.y - self.rect.height, (1000, 250), flip=True, loop= False, fps=80))
                     self.is_dead = True
                     
                     for turret_ in self.affected_turret:
-                        self.entity_list.append(others.Animation(self.jeu, 11, "projectiles/turret_desactivation_frames/frame_", turret_.position[0] - 10, turret_.position[1] -10 , (100, 120), flip=False, loop= False, fps=80, duration= turret_.disabled_duration, entity= turret_))
+                        self.entity_list.append(others.Animation(self.jeu, 11, "projectiles/turret_desactivation_frames/frame_", "turret_desactivation", turret_.position[0] - 10, turret_.position[1] -10 , (100, 120), flip=False, loop= False, fps=80, duration= turret_.disabled_duration, entity= turret_))
                     return
 
 class Incinerator_Bot(Bot):
@@ -345,7 +343,6 @@ class Incinerator_Bot(Bot):
             
         return None
 
-    
 class Fire_Projectile:
     def __init__(self, jeu, tourelle, x, y, degats, vitesse = 1, name="fire_projectile"):
         self.jeu = jeu
@@ -413,6 +410,54 @@ class Fire_Projectile:
             return True
         else: return False
 
+class Ender_Bot(Bot):
+    def __init__(self, jeu, x, y, id):
+        super().__init__(jeu, x, y, id, vie = 180, degats=80, vitesse= 0.1, portee = 10, cadence = 3, path ="enemy/ender_bot_frames/frame_", name="Ender_Bot", fps= 60)
+        self.special_ability_cooldown = 5
+        self.last_ability_use = time.time() - self.special_ability_cooldown  # The last time the special ability was used
+        self.ability_state = "unactive"
+            
+    def update(self):
+        self.animation.update()
+
+    def special_ability(self):
+        if self.ability_state == "unactive" and time.time() - self.last_ability_use >= self.special_ability_cooldown:
+            self.ability_state = "active"
+            #create the animation
+            self.teleportation_animation_start = others.Animation(self.jeu, 16, "projectiles/teleportation_frames/frame_", "teleportation", self.rect.x-30, self.rect.y-20, (120, 160), flip=False, loop= False, fps=120)
+            self.jeu.game_entities_list.append(self.teleportation_animation_start)
+            self.teleportation_animation_end = None
+        
+    def move(self):
+        
+        if self.ability_state == "active":
+            if self.teleportation_animation_start != None:
+                if self.teleportation_animation_start.is_dead:
+
+                    self.teleportation_animation_start = None
+                    # Teleport the enemy to a new position
+                    line = rd.randint(0,len(self.jeu.matrice_bot)-1)
+                    while self.jeu.matrice_bot[line][0][0] - self.rect.height//2 == self.position[1]:
+                        line = rd.randint(0,len(self.jeu.matrice_bot)-1)
+                    self.position[1] = self.jeu.matrice_bot[line][0][0] - self.rect.height//2
+                    self.rect.y = self.position[1]
+                    self.animation.rect.y = self.position[1]
+                    self.teleportation_animation_end = others.Animation(self.jeu, 16, "projectiles/teleportation_frames/frame_", "teleportation", self.rect.x-30, self.rect.y-20, (120, 160), flip=False, loop= False, fps=120, reverse=True)
+                    self.jeu.game_entities_list.append(self.teleportation_animation_end)
+            
+            if self.teleportation_animation_end != None:
+                if self.teleportation_animation_end.is_dead:
+                    self.ability_state = "unactive"
+                    self.last_ability_use = time.time()  # Update the last ability use time
+                    self.teleportation_animation_end = None
+        else:
+            return super().move()
+    
+    def get_damage(self, degats):
+        if self.vie - degats >= 0:
+            self.special_ability()
+        return super().get_damage(degats)
+    
 if __name__ == "__main__":
     import game
     jeu = game.Game()

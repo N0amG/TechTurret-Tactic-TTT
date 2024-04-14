@@ -2,9 +2,9 @@ TechTurret Tactic - TTT
 
 ---------------
 
-Version 0.5.8-dev
+Version 0.5.9-dev
 
-ajout du bot incinerator
+ajout de l'ender bot
 
 optimisation
 
