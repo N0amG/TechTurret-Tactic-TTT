@@ -57,6 +57,8 @@ class Bot_Wave_Spawner:
             self.jeu.game_entities_list.append(Incinerator_Bot(self.jeu, y, x, self.id))
         elif bot_type == "ender":
             self.jeu.game_entities_list.append(Ender_Bot(self.jeu, y, x, self.id))
+        elif bot_type == "stealth":
+            self.jeu.game_entities_list.append(StealthBlack_Bot(self.jeu, y, x, self.id))
         else:
             self.jeu.game_entities_list.append(Basic_Bot(self.jeu, y, x, self.id))
         self.id += 1
@@ -457,7 +459,23 @@ class Ender_Bot(Bot):
         if self.vie - degats >= 0:
             self.special_ability()
         return super().get_damage(degats)
+
+
+class StealthBlack_Bot(Bot):
+    def __init__(self, jeu, x, y, id):
+        super().__init__(jeu, x, y, id, vie = 200, degats=50, vitesse= 0.15, portee = 0, cadence = 5, path ="enemy/stealth_black_bot_frames/frame_", name="StealthBlack_Bot")
+        self.animation.entity = self
+        self.stealth = True
+        self.stealth_cooldown = 5
+        
+    def update(self):
+        self.animation.update()
+
     
+    def attack(self, cible):
+        self.stealth = False
+        return super().attack(cible)
+
 if __name__ == "__main__":
     import game
     jeu = game.Game()

@@ -6,6 +6,7 @@ from random import randint, random
 from abc import ABC, abstractmethod
 from pygame import BLEND_RGB_ADD
 
+
 class Turret_selection:
     def __new__(cls, jeu, x, y, name):
         if name == "Turret":
@@ -148,6 +149,10 @@ class Basic_Turret(Turret):
             for entity in self.jeu.game_entities_list:
                 if isinstance(entity, enemy.Bot):
                     if not isinstance(entity, enemy.Drone_Bot):
+                        if isinstance(entity, enemy.StealthBlack_Bot):
+                            if entity.stealth == True:
+                                shoot = False
+                                break
                         if entity.position[0] <= self.position[0] + self.portee and self.rect.colliderect((self.position[0], entity.position[1], entity.rect.width, entity.rect.height)):
                             shoot = True
                             break
@@ -194,6 +199,10 @@ class Laser_Turret(Turret):
             for entity in self.jeu.game_entities_list:
                 if isinstance(entity, enemy.Bot):
                     if not isinstance(entity, enemy.Drone_Bot):
+                        if isinstance(entity, enemy.StealthBlack_Bot):
+                            if entity.stealth == True:
+                                shoot = False
+                                break
                         if entity.position[0] <= self.position[0] + self.portee and self.rect.colliderect((self.position[0], entity.position[1], entity.rect.width, entity.rect.height)):
                             shoot = True
                             break
@@ -263,6 +272,10 @@ class Plasma_Turret(Turret):
             for entity in self.jeu.game_entities_list:
                 if isinstance(entity, enemy.Bot):
                     if not isinstance(entity, enemy.Drone_Bot):
+                        if isinstance(entity, enemy.StealthBlack_Bot):
+                            if entity.stealth == True:
+                                shoot = False
+                                break
                         if entity.position[0] <= self.position[0] + self.portee and self.rect.colliderect((self.position[0], entity.position[1], entity.rect.width, entity.rect.height)):
                             shoot = True
                             break
@@ -357,10 +370,13 @@ class BlackHole_Turret(Turret):
             shoot = False
             for entity in self.jeu.game_entities_list:
                 if isinstance(entity, enemy.Bot):
-                    if entity is not None:
-                        if entity.position[0] <= self.position[0] + self.portee and self.rect.colliderect((self.position[0], entity.position[1], entity.rect.width, entity.rect.height)):
-                            shoot = True
-                            break
+                    if isinstance(entity, enemy.StealthBlack_Bot):
+                            if entity.stealth == True:
+                                shoot = False
+                                break
+                    if entity.position[0] <= self.position[0] + self.portee and self.rect.colliderect((self.position[0], entity.position[1], entity.rect.width, entity.rect.height)):
+                        shoot = True
+                        break
             if shoot:
                 if time.time() - self.last_shot >= self.cadence:
                     self.last_shot = time.time()
@@ -496,7 +512,10 @@ class Omni_Turret(Turret):
                 self.entity_list.sort(key=lambda bot: bot.position[0])
                 for entity in self.entity_list:
                     if isinstance(entity, enemy.Bot):
-                        if not isinstance(entity, enemy.Drone_Bot):    
+                        if not isinstance(entity, enemy.Drone_Bot):
+                            if isinstance(entity, enemy.StealthBlack_Bot):
+                                if entity.stealth == True:
+                                    break
                             shoot = True
                             cible = entity
                             break

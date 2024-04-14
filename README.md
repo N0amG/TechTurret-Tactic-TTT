@@ -2,11 +2,9 @@ TechTurret Tactic - TTT
 
 ---------------
 
-Version 0.5.9-dev
+Version 0.5.10-dev
 
-ajout de l'ender bot
-
-optimisation
+ajout du stealth black bot
 
 ----------------
 

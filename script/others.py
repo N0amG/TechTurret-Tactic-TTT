@@ -65,6 +65,12 @@ class Animation(pg.sprite.Sprite):
         # hitbox
         #pg.draw.rect(fenetre, (255,0,0), (self.rect.x, self.rect.y, self.rect.width, self.rect.height), 1)
         
+        if self.name == "StealthBlack_Bot":
+            if self.entity.stealth:
+                if self.entity.rect.x >= self.jeu.matrice_tourelle[4][0][0]:
+                    self.image = self.image.convert_alpha()
+                    self.image.set_alpha(70)
+        
         fenetre.blit(self.image, self.rect)
 
         if self.name == "impulse":
