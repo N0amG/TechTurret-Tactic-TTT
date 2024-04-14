@@ -118,6 +118,9 @@ class Projectile:
         if self.rect.colliderect(cible.rect):
             if isinstance(cible, enemy.Drone_Bot):
                 return False
+            if isinstance(cible, enemy.StealthBlack_Bot):
+                if cible.stealth == True:
+                    return False
             return True
         else: return False
 
@@ -151,8 +154,7 @@ class Basic_Turret(Turret):
                     if not isinstance(entity, enemy.Drone_Bot):
                         if isinstance(entity, enemy.StealthBlack_Bot):
                             if entity.stealth == True:
-                                shoot = False
-                                break
+                                continue
                         if entity.position[0] <= self.position[0] + self.portee and self.rect.colliderect((self.position[0], entity.position[1], entity.rect.width, entity.rect.height)):
                             shoot = True
                             break
@@ -177,6 +179,9 @@ class Basic_Projectile(Projectile):
     def is_colliding(self, cible):
         if self.rect.colliderect(cible.rect):
             if not isinstance(cible, enemy.Drone_Bot):
+                if isinstance(cible, enemy.StealthBlack_Bot):
+                    if cible.stealth == True:
+                        return False
                 self.is_dead = True
                 return True
         else: return False
@@ -201,8 +206,7 @@ class Laser_Turret(Turret):
                     if not isinstance(entity, enemy.Drone_Bot):
                         if isinstance(entity, enemy.StealthBlack_Bot):
                             if entity.stealth == True:
-                                shoot = False
-                                break
+                                continue
                         if entity.position[0] <= self.position[0] + self.portee and self.rect.colliderect((self.position[0], entity.position[1], entity.rect.width, entity.rect.height)):
                             shoot = True
                             break
@@ -274,8 +278,7 @@ class Plasma_Turret(Turret):
                     if not isinstance(entity, enemy.Drone_Bot):
                         if isinstance(entity, enemy.StealthBlack_Bot):
                             if entity.stealth == True:
-                                shoot = False
-                                break
+                                continue
                         if entity.position[0] <= self.position[0] + self.portee and self.rect.colliderect((self.position[0], entity.position[1], entity.rect.width, entity.rect.height)):
                             shoot = True
                             break
@@ -372,8 +375,7 @@ class BlackHole_Turret(Turret):
                 if isinstance(entity, enemy.Bot):
                     if isinstance(entity, enemy.StealthBlack_Bot):
                             if entity.stealth == True:
-                                shoot = False
-                                break
+                                continue
                     if entity.position[0] <= self.position[0] + self.portee and self.rect.colliderect((self.position[0], entity.position[1], entity.rect.width, entity.rect.height)):
                         shoot = True
                         break
@@ -515,7 +517,7 @@ class Omni_Turret(Turret):
                         if not isinstance(entity, enemy.Drone_Bot):
                             if isinstance(entity, enemy.StealthBlack_Bot):
                                 if entity.stealth == True:
-                                    break
+                                    continue
                             shoot = True
                             cible = entity
                             break

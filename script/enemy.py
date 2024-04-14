@@ -476,6 +476,10 @@ class StealthBlack_Bot(Bot):
         self.stealth = False
         return super().attack(cible)
 
+    def get_damage(self, degats):
+        if self.stealth:
+            return False
+        return super().get_damage(degats)
 if __name__ == "__main__":
     import game
     jeu = game.Game()
