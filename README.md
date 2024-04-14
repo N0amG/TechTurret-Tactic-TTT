@@ -2,7 +2,7 @@ TechTurret Tactic - TTT
 
 ---------------
 
-Version 0.5.10.1-dev
+Version 0.5.10-dev
 
 ajout du stealth black bot
 
