@@ -114,8 +114,8 @@ class TITAN_Animation(pg.sprite.Sprite):
         self.state_images = {key:self.get_images(self.state_images[key], key) for key in self.state_images.keys()}
         self.image = self.state_images["moving"][0]
         
-        self.rect = self.titan.rect
-        self.rect.x, self.rect.y = self.titan.rect.x, self.titan.rect.y
+        self.rect = self.image.get_rect()
+        self.rect.x, self.rect.y = self.titan.animation_position
         
         
 
@@ -141,7 +141,7 @@ class TITAN_Animation(pg.sprite.Sprite):
         
         now = pg.time.get_ticks()
         self.get_state()
-        self.rect.x, self.rect.y = self.titan.rect.x, self.titan.rect.y
+        self.rect.x, self.rect.y = self.titan.animation_position
         
         if self.entity != None:
             if self.entity.is_dead:

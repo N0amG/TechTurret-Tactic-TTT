@@ -136,7 +136,7 @@ class Bot(pg.sprite.Sprite):
         
         # hitbox
         if self.show_hitbox:
-            pg.draw.rect(fenetre, (255,0,0), (self.rect.x, self.rect.y, self.rect.width, self.rect.height), 1)
+            pg.draw.rect(fenetre, (0,255,0), (self.rect.x, self.rect.y, self.rect.width, self.rect.height), 1)
         
         if self.vie == self.vie_max:
             return
@@ -497,26 +497,36 @@ class TITAN_Boss(Bot):
         
         self.state = self.state_list[0]
         
+        self.phase = 0
+        
         self.rect = pg.Rect(self.position[0], self.position[1], 450, 300)
-        self.animation.rect.x, self.animation.rect.y = self.position[0], self.position[1]
         
+        self.animation_position = [self.position[0], self.position[1]]
         self.animation = others.TITAN_Animation(jeu=jeu, path="enemy/titan/", name="TITAN_Boss", x = x, y = y, proportion=(160*5, 96*5), flip=True, fps= 40, entity=self)
-
         
+        
+        self.position = [self.position[0] + 225, self.position[1] + 190]
         #self.position[0] += 300
 
         self.show_hitbox = True
+        self.show_life = False
     
-    
-    
+    def update(self):
+        self.animation.update()
+        
     def move(self):
-        if self.position[0] <= 800:
+        if self.position[0] <= 1000 and self.phase == 0:
             self.state = self.state_list[1]
+            self.phase = 1
         
         if self.state == self.state_list[0]:    
             self.position[0] -= self.vitesse
-            self.rect.x, self.rect.y = self.position[0] + 225, self.position[1] + 190
-            self.animation.rect.x, self.animation.rect.y = self.position[0], self.position[1]
+            self.animation_position[0] -= self.vitesse
+            
+            self.rect.x, self.rect.y = self.position[0], self.position[1]
+            self.animation.rect.x, self.animation.rect.y = self.animation_position
+            
+            self.update()
             
             if self.position[0] <= self.jeu.largeur_interface + 30:
                 if not isinstance(self, Drone_Bot):
@@ -526,6 +536,33 @@ class TITAN_Boss(Bot):
         else:
             self.update()
 
+    def render(self, fenetre):
+        
+        self.animation.render(fenetre)
+        
+        # hitbox
+        if self.show_hitbox:
+            pg.draw.rect(fenetre, (0,255,0), (self.rect.x, self.rect.y, self.rect.width, self.rect.height), 1)
+        
+        if self.vie == self.vie_max:
+            return
+        
+        if not self.show_life:
+            return
+        # Calcul du pourcentage de vie
+        pourcentage_vie = self.vie / self.vie_max  # Utilisez la vie maximale de la tourelle pour calculer le pourcentage de vie
+
+        # Calcul de la largeur de la barre verte en fonction du pourcentage de vie
+        largeur_barre_verte = round(self.rect.width * pourcentage_vie)
+
+        # Calcul de la position de départ de la barre rouge
+        position_barre_rouge = (self.rect.x + largeur_barre_verte, self.rect.y)
+
+        # Dessin de la barre verte
+        pg.draw.rect(fenetre, (0, 255, 0), (self.rect.x, self.rect.y, largeur_barre_verte, 5))  # Utilisez la largeur de la barre verte pour le troisième argument
+
+        # Dessin de la barre rouge
+        pg.draw.rect(fenetre, (255, 0, 0), (position_barre_rouge[0], position_barre_rouge[1], self.rect.width - largeur_barre_verte, 5))
 
 
 if __name__ == "__main__":

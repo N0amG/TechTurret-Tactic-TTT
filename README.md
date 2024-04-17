@@ -2,9 +2,9 @@ TechTurret Tactic - TTT
 
 ---------------
 
-Version 0.5.10-dev
+Version 0.5.11-dev
 
-ajout du stealth black bot
+developpement du Boss TITAN : méthode d'animation et du système de hitbox terminé
 
 ----------------
 
