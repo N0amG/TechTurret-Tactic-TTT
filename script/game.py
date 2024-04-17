@@ -96,17 +96,16 @@ class Game:
         self.bot_wave_spawner = enemy.Bot_Wave_Spawner(jeu=self)
         
         #test et placement des éléments    
-        self.game_entities_list.append(turret.Shield(self, self.matrice_tourelle[2][7][1], self.matrice_tourelle[2][9][0]))
-        self.game_entities_list.append(turret.Plasma_Turret(self, self.matrice_tourelle[2][1][1], self.matrice_tourelle[2][1][0]))
-        [self.game_entities_list.append(turret.Basic_Turret(self ,self.matrice_tourelle[2][i][1], self.matrice_tourelle[2][i][0])) for i in range(4,5)]
+        #self.game_entities_list.append(turret.Shield(self, self.matrice_tourelle[2][7][1], self.matrice_tourelle[2][9][0]))
+        #self.game_entities_list.append(turret.Plasma_Turret(self, self.matrice_tourelle[2][1][1], self.matrice_tourelle[2][1][0]))
+        #[self.game_entities_list.append(turret.Basic_Turret(self ,self.matrice_tourelle[2][i][1], self.matrice_tourelle[2][i][0])) for i in range(4,5)]
 
-        self.bot_wave_spawner.manual_spawn(self.matrice_bot[3][0][1], self.matrice_bot[2][0][0], "stealth")
+        self.bot_wave_spawner.manual_spawn(self.matrice_bot[3][0][1], self.matrice_bot[1][0][0], "titan")
         
         #self.bot_wave_spawner.manual_spawn(self.matrice_bot[2][1][1], self.matrice_bot[2][1][0], "basic")
         self.debug_bot_timer = None
-        self.debug_bot_timer = time.time()
-        
-        
+        #self.debug_bot_timer = time.time()
+
     def run(self):
         # Boucle principale du jeu
         running = True
@@ -185,7 +184,7 @@ class Game:
 
         # Quitter pg
         pg.quit()
-    
+
     def update(self):
         if not self.is_game_over:
             
@@ -226,7 +225,7 @@ class Game:
             if not self.wave_ended and cond:
                 if self.bot_wave_spawner.update() == 3:
                     self.wave_ended = True
-        
+
     def render_debug(self):
         for i in range(5):
             for j in range(10):
@@ -243,13 +242,13 @@ class Game:
                 pg.draw.rect(self.fenetre, (255, 255, 255), rect, 1)
                     
         #for entity in self.game_entities_list : print(entity.name)
-    
+
     def render_wave(self):
         font = pg.font.Font(None, 50)
         text = font.render(f"Wave {self.wave}", True, (255, 255, 255))
         text_rect = text.get_rect(topright=(self.taille_fenetre[0] - 10, 10))
         self.fenetre.blit(text, text_rect)
-    
+
     def render_game_over(self):
         font = pg.font.Font(None, 100)
         text = font.render("Game Over", True, (255, 0, 0))
@@ -261,7 +260,7 @@ class Game:
         text = font.render("Pause", True, (255, 255, 255))
         text_rect = text.get_rect(center=(self.taille_fenetre[0] // 2, self.taille_fenetre[1] // 2 - 150))
         self.fenetre.blit(text, text_rect)
-        
+
     def render_shop_interface(self):
         pg.draw.rect(self.fenetre, (68,95,144), (0, 0, self.largeur_interface, self.taille_fenetre[1]))
         
@@ -280,7 +279,7 @@ class Game:
                 text_prix = font.render(str(tourelle[1]), True, (0, 0, 0))
                 text_prix_rect = text_prix.get_rect(center=(self.largeur_interface // 2, 65 + i * 83))
                 self.fenetre.blit(text_prix, text_prix_rect)
-       
+
     def red_cross_draw(self):
         # Chargement de l'image "red_cross.png"
         red_cross_image = pg.image.load("assets/images/others/red_cross.png")
@@ -288,7 +287,7 @@ class Game:
         red_cross_rect = red_cross_image.get_rect()
         red_cross_rect.bottomleft = (50, self.taille_fenetre[1] - 10)
         self.fenetre.blit(red_cross_image, red_cross_rect)
-    
+
     def update_kamas_display(self):
         # Mise à jour de la surface de la monnaie seulement si la valeur change
         current_kamas_surface = self.render_kamas_surface()
@@ -309,7 +308,7 @@ class Game:
         surface.blit(self.kama_image, (text_rect.right + 5, 5))
 
         return surface
-    
+
     def kama_loot(self, enemy = None):
         # Donner 50 kamas toutes les minutes
         if time.time() - self.last_kama_time >= 30 and self.wave_ended == False:
@@ -319,14 +318,14 @@ class Game:
         # Donner la moitié des PV d'un monstre tué en kamas
         if enemy is not None:
             self.kamas += enemy.point
-    
+
     def next_wave_button_render(self):
         self.next_wave_button_image = pg.image.load("assets/images/others/next_wave_button.png")
         self.next_wave_button_image = pg.transform.scale(self.next_wave_button_image, (32*2, 24*2))
         self.next_wave_button_rect = self.next_wave_button_image.get_rect()
         self.next_wave_button_rect.bottomright = (self.taille_fenetre[0] - 50, self.taille_fenetre[1] - 10)
         self.fenetre.blit(self.next_wave_button_image, self.next_wave_button_rect)
-        
+
     def mouse_detection(self):
         # Récupération des coordonnées de la souris
         mouse_x, mouse_y = pg.mouse.get_pos()
@@ -359,7 +358,7 @@ class Game:
                     return i  # Retourne le mot "shop" et l'index de la tourelle
             
             return None
-            
+
     def render(self):
         # Dessiner sur la fenêtre
         self.fenetre.blit(self.fond_ecran, (self.largeur_interface, 0))  # Dessine l'image du fond d'écran aux coordonnées (0, 0)
@@ -394,7 +393,6 @@ class Game:
         pg.display.flip()
 
 
-  
 if __name__ == "__main__":
     game = Game()
     game.run()

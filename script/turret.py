@@ -452,7 +452,7 @@ class BlackHole_Projectile(Projectile):
                     if self.is_colliding(bot):
                         bot.get_damage(self.degats)
                     
-                    if bot.position[0] <= self.position[0] + self.range and bot.position[0] >= self.position[0] - self.range:
+                    if bot.position[0] <= self.position[0] + self.range and bot.position[0] >= self.position[0] - self.range and not isinstance(bot, enemy.TITAN_Boss):
                         if bot.position[0] > self.position[0]:
                             bot.position[0] -= self.attraction_force
                         else:

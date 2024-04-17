@@ -27,7 +27,7 @@ class Bot_Wave_Spawner:
                     # Choisissez une coordonnée aléatoire dans la ligne
                     x, y = rd.randint(0,len(self.jeu.matrice_bot)-1), rd.randint(0,len(self.jeu.matrice_bot[0])-1)
                     x, y = self.jeu.matrice_bot[x][y]
-                    self.jeu.game_entities_list.append(Basic_Bot(self.jeu, y, x, self.id))
+                    #self.jeu.game_entities_list.append(Basic_Bot(self.jeu, y, x, self.id))
                     self.id += 1
                     self.spawned += 1
                     return True
@@ -59,6 +59,8 @@ class Bot_Wave_Spawner:
             self.jeu.game_entities_list.append(Ender_Bot(self.jeu, y, x, self.id))
         elif bot_type == "stealth":
             self.jeu.game_entities_list.append(StealthBlack_Bot(self.jeu, y, x, self.id))
+        elif bot_type == "titan":
+            self.jeu.game_entities_list.append(TITAN_Boss(self.jeu, y, x, self.id))
         else:
             self.jeu.game_entities_list.append(Basic_Bot(self.jeu, y, x, self.id))
         self.id += 1
@@ -70,13 +72,14 @@ class Bot(pg.sprite.Sprite):
         self.entity_list = jeu.game_entities_list
         self.name = name
         self.position = [x, y]
+        self.path = path
         self.animation = others.Animation(self.jeu, nb_images, path, name, x, y, coef, flip, fps)
         self.image = self.animation.image
         self.position[0] = (self.position[0] - self.image.get_width()// 2)
         self.position[1] = (self.position[1] - self.image.get_height()// 2) 
         self.rect = self.image.get_rect()
         self.rect.x, self.rect.y = self.position[0], self.position[1]
-        
+            
         self.vie = vie
         self.vie_max = vie
         self.point = round(((vie+degats+vitesse*1000+cadence)//4)/25)*25 # moyenne des stats arrondi a 25 près
@@ -88,6 +91,8 @@ class Bot(pg.sprite.Sprite):
         self.id = id
         self.last_shot = time.time()-self.cadence
         self.is_dead = False
+        
+        self.show_hitbox = False
 
     def __str__(self):
         return f"Bot id : {self.id}"
@@ -96,17 +101,16 @@ class Bot(pg.sprite.Sprite):
         self.animation.update()
     
     def move(self):
-        self.update()
-        self.image = self.animation.image
         
+        self.update()        
         
         for entity in self.entity_list:
             if isinstance(entity, turret.Turret) and self.rect.colliderect(entity.rect):
                 return self.attack(entity)
         
         self.position[0] -= self.vitesse
-        self.animation.rect.x, self.animation.rect.y = self.position[0], self.position[1]
         self.rect.x, self.rect.y = self.position[0], self.position[1]
+        self.animation.rect.x, self.animation.rect.y = self.position[0], self.position[1]
         
         if self.position[0] <= self.jeu.largeur_interface + 30:
             if not isinstance(self, Drone_Bot):
@@ -127,9 +131,12 @@ class Bot(pg.sprite.Sprite):
             return False
     
     def render(self, fenetre):
+        
         self.animation.render(fenetre)
+        
         # hitbox
-        #pg.draw.rect(fenetre, (255,0,0), (self.rect.x, self.rect.y, self.rect.width, self.rect.height), 1)
+        if self.show_hitbox:
+            pg.draw.rect(fenetre, (255,0,0), (self.rect.x, self.rect.y, self.rect.width, self.rect.height), 1)
         
         if self.vie == self.vie_max:
             return
@@ -151,11 +158,11 @@ class Bot(pg.sprite.Sprite):
 
 class Basic_Bot(Bot):
     def __init__(self, jeu, x, y, id):
-        super().__init__(jeu, x, y, id, vie = 100, degats=20, vitesse= 0.05, portee = 0, cadence = 2, path ="enemy/basic_bot_frames/frame_", name="Basic_Bot")
+        super().__init__(jeu, x, y, id, vie = 100, degats=20, vitesse= 0.08, portee = 0, cadence = 2, path ="enemy/basic_bot_frames/frame_", name="Basic_Bot")
 
 class Drone_Bot(Bot):
     def __init__(self, jeu, x, y, id):
-        super().__init__(jeu, x, y, id, vie = 25, degats=10, vitesse= 0.2, portee = 0, cadence = 0.5, path ="enemy/drone_bot_frames/frame_", name="Drone_Bot", coef = (66*0.9, 84*0.8), flip= False, fps= 90)
+        super().__init__(jeu, x, y, id, vie = 25, degats=10, vitesse= 0.3, portee = 0, cadence = 0.5, path ="enemy/drone_bot_frames/frame_", name="Drone_Bot", coef = (66*0.9, 84*0.8), flip= False, fps= 90)
     
     def move(self):
         self.update()
@@ -460,7 +467,6 @@ class Ender_Bot(Bot):
             self.special_ability()
         return super().get_damage(degats)
 
-
 class StealthBlack_Bot(Bot):
     def __init__(self, jeu, x, y, id):
         super().__init__(jeu, x, y, id, vie = 200, degats=50, vitesse= 0.15, portee = 0, cadence = 5, path ="enemy/stealth_black_bot_frames/frame_", name="StealthBlack_Bot")
@@ -480,6 +486,48 @@ class StealthBlack_Bot(Bot):
         if self.stealth:
             return False
         return super().get_damage(degats)
+
+
+class TITAN_Boss(Bot):
+    def __init__(self, jeu, x, y, id):
+        super().__init__(jeu, x, y, id, vie = 2500, degats=100, vitesse= 0.2, portee = 0, cadence = 5, path ="enemy/titan/titan_moving_frames/frame_", nb_images=4, coef = (160*5, 96*5), name="TITAN_Boss", fps= 45)
+
+        self.state_list = ["moving", "standing" , "attack_1", "attack_2",
+                           "shield", "death_beam", "damaged", "death"]
+        
+        self.state = self.state_list[0]
+        
+        self.rect = pg.Rect(self.position[0], self.position[1], 450, 300)
+        self.animation.rect.x, self.animation.rect.y = self.position[0], self.position[1]
+        
+        self.animation = others.TITAN_Animation(jeu=jeu, path="enemy/titan/", name="TITAN_Boss", x = x, y = y, proportion=(160*5, 96*5), flip=True, fps= 40, entity=self)
+
+        
+        #self.position[0] += 300
+
+        self.show_hitbox = True
+    
+    
+    
+    def move(self):
+        if self.position[0] <= 800:
+            self.state = self.state_list[1]
+        
+        if self.state == self.state_list[0]:    
+            self.position[0] -= self.vitesse
+            self.rect.x, self.rect.y = self.position[0] + 225, self.position[1] + 190
+            self.animation.rect.x, self.animation.rect.y = self.position[0], self.position[1]
+            
+            if self.position[0] <= self.jeu.largeur_interface + 30:
+                if not isinstance(self, Drone_Bot):
+                    self.jeu.is_game_over = True
+                self.is_dead = True
+                
+        else:
+            self.update()
+
+
+
 if __name__ == "__main__":
     import game
     jeu = game.Game()
