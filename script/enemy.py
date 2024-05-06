@@ -286,7 +286,7 @@ class Tank_Bot(Bot):
 
 class EMP_Bot(Bot):
     def __init__(self, jeu, x, y, id):
-        super().__init__(jeu, x, y, id, vie = 100, degats=25, vitesse= 0.1, portee = 0, cadence = 20, path ="enemy/emp_bot_frames/frame_", name="EMP_Bot")
+        super().__init__(jeu, x, y, id, vie = 100, degats=25, vitesse= 0.12, portee = 0, cadence = 20, path ="enemy/emp_bot_frames/frame_", name="EMP_Bot")
         self.affected_turret = [] # liste des positions des effets
 
     def update(self):
@@ -490,12 +490,19 @@ class StealthBlack_Bot(Bot):
 
 class TITAN_Boss(Bot):
     def __init__(self, jeu, x, y, id):
-        super().__init__(jeu, x, y, id, vie = 2500, degats=100, vitesse= 0.2, portee = 0, cadence = 5, path ="enemy/titan/titan_moving_frames/frame_", nb_images=4, coef = (160*5, 96*5), name="TITAN_Boss", fps= 45)
+        super().__init__(jeu, x, y, id, vie = 2500, degats=0, vitesse= 0.2, portee = 0, cadence = 5, path ="enemy/titan/titan_moving_frames/frame_", nb_images=4, coef = (160*5, 96*5), name="TITAN_Boss", fps= 45)
 
         self.state_list = ["moving", "standing" , "attack_1", "attack_2",
                            "shield", "death_beam", "damaged", "death"]
         
+        self.cooldown_dict = {"attack_1" : 5, "attack_2" : 10, "shield" : 10, "death_beam" : 15}
+        self.duration_dict = {"attack_1" : 5, "attack_2" : 10, "shield" : 10, "death_beam" : 15, "damaged" : 5,}
+        
+        self.next_ability = "" # in [attack_1, attack_2, shield, death_beam]
+        self.next_ability_start = None
+        
         self.state = self.state_list[0]
+        self.state_start = time.time()
         
         self.phase = 0
         
@@ -508,33 +515,87 @@ class TITAN_Boss(Bot):
         self.position = [self.position[0] + 225, self.position[1] + 190]
         #self.position[0] += 300
 
+
         self.show_hitbox = True
         self.show_life = False
     
     def update(self):
         self.animation.update()
+        #ajouter un systeme de destruction des tourelles en contact et de l'avancer si n'y a plus de tourelles
         
-    def move(self):
-        if self.position[0] <= 1000 and self.phase == 0:
+        
+        if self.phase == 0: self.phase_0()
+                
+        elif self.phase == 1: self.phase_1()
+
+        #gere le changement de phase (pas testé)
+        if self.animation.is_animation_done:
+            if self.state == self.state_list[6]:
+                self.animation.is_animation_done = False
+                self.state = self.state_list[1]
+                self.phase += 1
+                self.animation.get_state()
+
+    def phase_1(self):
+        if self.position[0] <= 1000 and self.state == self.state_list[0]:
             self.state = self.state_list[1]
-            self.phase = 1
+            self.state_start = time.time()
+            self.next_ability = "attack_1"
+            self.next_ability_start = time.time() + self.cooldown_dict[self.next_ability] + rd.randint(0, 5)
+            
         
+        if self.state == self.state_list[1]:
+            if time.time() >= self.next_ability_start:
+                self.state = self.next_ability
+                self.animation.get_state()
+                self.next_ability = ""
+                self.next_ability_start = None
+                self.state_start = time.time()
+        
+        if self.state != "standing" and self.state_start >= self.duration_dict[self.state] and self.next_ability == "":
+            self.state = self.state_list[1]
+            self.animation.get_state()
+            self.state_start = time.time()
+
+            
+            
+
+    def phase_0(self):
+        if self.state == self.state_list[0] and self.phase == 0:    
+            self.moving_forward()
+            
+            if self.position[0] <= 1000:
+                self.phase = 1
+    
+    def moving_forward(self):
         if self.state == self.state_list[0]:    
             self.position[0] -= self.vitesse
             self.animation_position[0] -= self.vitesse
             
             self.rect.x, self.rect.y = self.position[0], self.position[1]
             self.animation.rect.x, self.animation.rect.y = self.animation_position
-            
-            self.update()
-            
-            if self.position[0] <= self.jeu.largeur_interface + 30:
-                if not isinstance(self, Drone_Bot):
-                    self.jeu.is_game_over = True
-                self.is_dead = True
-                
-        else:
-            self.update()
+    
+    #update methode call at each loop in the main game loop
+    def move(self):
+        
+        self.update()
+       
+        
+        if self.position[0] <= self.jeu.largeur_interface + 30:
+            self.jeu.is_game_over = True
+            self.is_dead = True
+
+
+
+    def is_colliding(self, cible):
+        if self.rect.colliderect(cible.rect):
+            self.colliding_damage(cible)
+            return True
+        else: return False
+    
+    def colliding_damage(self, cible):
+        cible.vie = 0
+        cible.is_dead = True
 
     def render(self, fenetre):
         

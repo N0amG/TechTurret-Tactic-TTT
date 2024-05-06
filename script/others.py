@@ -98,6 +98,15 @@ class TITAN_Animation(pg.sprite.Sprite):
         self.fps = fps
         self.flip = flip
         self.loop = loop
+        
+        self.loop_count = 0
+        self.loop_number = 0
+        self.stay_at_last_frame = False
+        self.is_animation_done = False
+        
+        self.starting_frame_of_loop= 0
+        self.ending_frame_of_loop = 0
+        
         self.reverse = reverse
         self.current_frame = starting_frame
         self.last_update = pg.time.get_ticks()
@@ -105,7 +114,6 @@ class TITAN_Animation(pg.sprite.Sprite):
         self.duration = duration
         self.start_timer = pg.time.get_ticks()
         self.is_dead = False
-
         
         self.state_list = self.titan.state_list
         self.state = self.titan.state
@@ -135,7 +143,48 @@ class TITAN_Animation(pg.sprite.Sprite):
         if self.titan.state != self.state:
             self.state = self.titan.state
             self.current_frame = 0
+            self.loop_count = 0
+            self.loop_number = 0
             self.image = self.state_images[self.state][self.current_frame]
+            self.get_state_properties()
+        
+    def get_state_properties(self):
+        
+        if self.state == "moving":
+            self.starting_frame_of_loop = 0
+            self.ending_frame_of_loop = 0
+        
+        elif self.state == "standing":
+            self.starting_frame_of_loop = 0
+            self.ending_frame_of_loop = 0
+        
+        elif self.state == "attack_1":
+            self.starting_frame_of_loop = 2
+            self.ending_frame_of_loop = 6
+        
+        elif self.state == "attack_2":
+            self.starting_frame_of_loop = 0
+            self.ending_frame_of_loop = 0
+            
+        elif self.state == "shield":
+            self.starting_frame_of_loop = len(self.state_images[self.state]) - 3
+            self.ending_frame_of_loop = 0
+        
+        elif self.state == "death_beam":
+            self.starting_frame_of_loop = len(self.state_images[self.state]) - 2
+            self.ending_frame_of_loop = 0
+        
+        elif self.state == "damaged":
+            self.starting_frame_of_loop = 0
+            self.ending_frame_of_loop = 0
+            self.loop_number = self.titan.phase
+
+        elif self.state == "death":
+            self.starting_frame_of_loop = len(self.state_images[self.state]) - 2
+            self.loop_number = 3
+            self.ending_frame_of_loop = 0
+            self.stay_at_last_frame = True
+            
     
     def update(self):
         
@@ -146,10 +195,38 @@ class TITAN_Animation(pg.sprite.Sprite):
         if self.entity != None:
             if self.entity.is_dead:
                 self.is_dead = True
-                return 
+                return
+        
         if now - self.last_update > 9000 // self.fps:
             self.last_update = now
             self.current_frame = (self.current_frame + 1) % len(self.state_images[self.state])
+            
+            if self.current_frame + self.starting_frame_of_loop == self.starting_frame_of_loop:
+                self.loop_count += 1
+                
+            if self.starting_frame_of_loop > 0:     
+                if self.current_frame == 0:
+                    self.current_frame = self.starting_frame_of_loop
+
+
+            if self.ending_frame_of_loop > 0:
+                if self.current_frame == self.ending_frame_of_loop:
+                    self.current_frame = self.starting_frame_of_loop
+
+            if self.loop_number > 0:
+                if self.loop_count >= self.loop_number:
+                    self.stay_at_last_frame = True
+                    self.is_animation_done = True
+                    if self.state == "damaged":
+                        self.get_state()
+                    
+                    
+
+
+                if self.stay_at_last_frame:
+                    if self.loop_count >= self.loop_number:
+                        self.current_frame = len(self.state_images[self.state]) - 1
+                        
             self.image = self.state_images[self.state][self.current_frame]
             
         if self.loop == False:
@@ -162,7 +239,6 @@ class TITAN_Animation(pg.sprite.Sprite):
                     self.is_dead = True
 
     def render(self, fenetre):
-
         # hitbox
         pg.draw.rect(fenetre, (255,0,0), (self.rect.x, self.rect.y, self.rect.width, self.rect.height), 1)
         fenetre.blit(self.image, self.rect)
