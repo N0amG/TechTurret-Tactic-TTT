@@ -56,7 +56,7 @@ class Game:
                 # Calculer les coordonnées en utilisant les décalages
                 coord_x = decalage_x + i * taille_ligne
                 coord_y = decalage_y + j * taille_colonne
-                # Afficher les coordonnées
+
                 self.matrice_tourelle[i][j] = (coord_x, coord_y)
             
             for k in range(2):
@@ -96,7 +96,7 @@ class Game:
         self.bot_wave_spawner = enemy.Bot_Wave_Spawner(jeu=self)
         
         #test et placement des éléments    
-        #self.game_entities_list.append(turret.Shield(self, self.matrice_tourelle[2][7][1], self.matrice_tourelle[2][9][0]))
+        self.game_entities_list.append(turret.Turret_selection(self, self.matrice_tourelle[0][0][1], self.matrice_tourelle[0][0][0], "Turret"))
         #self.game_entities_list.append(turret.Plasma_Turret(self, self.matrice_tourelle[2][1][1], self.matrice_tourelle[2][1][0]))
         #[self.game_entities_list.append(turret.Basic_Turret(self ,self.matrice_tourelle[2][i][1], self.matrice_tourelle[2][i][0])) for i in range(4,5)]
 

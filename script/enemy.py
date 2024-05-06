@@ -490,41 +490,45 @@ class StealthBlack_Bot(Bot):
 
 class TITAN_Boss(Bot):
     def __init__(self, jeu, x, y, id):
-        super().__init__(jeu, x, y, id, vie = 2500, degats=0, vitesse= 0.2, portee = 0, cadence = 5, path ="enemy/titan/titan_moving_frames/frame_", nb_images=4, coef = (160*5, 96*5), name="TITAN_Boss", fps= 45)
+        super().__init__(jeu, x, y, id, vie = 2500, degats=0, vitesse= 0.25, portee = 0, cadence = 5, path ="enemy/titan/titan_moving_frames/frame_", nb_images=4, coef = (160*5, 96*5), name="TITAN_Boss", fps= 45)
 
         self.state_list = ["moving", "standing" , "attack_1", "attack_2",
                            "shield", "death_beam", "damaged", "death"]
         
         self.cooldown_dict = {"attack_1" : 5, "attack_2" : 10, "shield" : 10, "death_beam" : 15}
-        self.duration_dict = {"attack_1" : 5, "attack_2" : 10, "shield" : 10, "death_beam" : 15, "damaged" : 5,}
+        self.duration_dict = {"attack_1" : 5, "attack_2" : 10, "shield" : 10, "death_beam" : 15}
         
-        self.next_ability = "" # in [attack_1, attack_2, shield, death_beam]
-        self.next_ability_start = None
+        self.next_state= "" # in [attack_1, attack_2, shield, death_beam]
+        self.next_state_start = None
         
         self.state = self.state_list[0]
         self.state_start = time.time()
         
         self.phase = 0
-        
-        self.rect = pg.Rect(self.position[0], self.position[1], 450, 300)
+        #self.position[0] += 300
         
         self.animation_position = [self.position[0], self.position[1]]
         self.animation = others.TITAN_Animation(jeu=jeu, path="enemy/titan/", name="TITAN_Boss", x = x, y = y, proportion=(160*5, 96*5), flip=True, fps= 40, entity=self)
         
         
         self.position = [self.position[0] + 225, self.position[1] + 190]
-        #self.position[0] += 300
+        self.rect = pg.Rect(self.position[0], self.position[1], 360, 300)
+        
 
 
-        self.show_hitbox = True
+        self.show_hitbox = False
         self.show_life = False
     
     def update(self):
+                
         self.animation.update()
         #ajouter un systeme de destruction des tourelles en contact et de l'avancer si n'y a plus de tourelles
         
+        if self.collision_detection():
+            self.state = self.state_list[0]
+            self.moving_forward()
         
-        if self.phase == 0: self.phase_0()
+        elif self.phase == 0: self.phase_0()
                 
         elif self.phase == 1: self.phase_1()
 
@@ -535,40 +539,38 @@ class TITAN_Boss(Bot):
                 self.state = self.state_list[1]
                 self.phase += 1
                 self.animation.get_state()
-
-    def phase_1(self):
-        if self.position[0] <= 1000 and self.state == self.state_list[0]:
-            self.state = self.state_list[1]
-            self.state_start = time.time()
-            self.next_ability = "attack_1"
-            self.next_ability_start = time.time() + self.cooldown_dict[self.next_ability] + rd.randint(0, 5)
-            
-        
-        if self.state == self.state_list[1]:
-            if time.time() >= self.next_ability_start:
-                self.state = self.next_ability
-                self.animation.get_state()
-                self.next_ability = ""
-                self.next_ability_start = None
-                self.state_start = time.time()
-        
-        if self.state != "standing" and self.state_start >= self.duration_dict[self.state] and self.next_ability == "":
-            self.state = self.state_list[1]
-            self.animation.get_state()
-            self.state_start = time.time()
-
-            
-            
-
+    
     def phase_0(self):
         if self.state == self.state_list[0] and self.phase == 0:    
             self.moving_forward()
             
-            if self.position[0] <= 1000:
+            if self.position[0] <= 1080:
                 self.phase = 1
-    
+
+    def phase_1(self):
+        if self.state == self.state_list[0]:
+            self.state = self.state_list[1]
+            self.state_start = time.time()
+            self.next_state= "attack_1"
+            self.next_state_start = time.time() + self.cooldown_dict[self.next_state] + rd.randint(0, 5) #time.time() auquel la prochaine attaque sera lancée
+            
+        if self.state == self.state_list[1]:
+            if time.time() >= self.next_state_start:
+                self.state = self.next_state
+                self.animation.get_state()
+                self.next_state= ""
+                self.next_state_start = None
+                self.state_start = time.time()
+        
+        if self.state != "standing" and time.time() - self.state_start >= self.duration_dict[self.state] and self.next_state== "":
+            self.state = self.state_list[1]
+            self.next_state = "attack_1"
+            self.next_state_start = time.time() + self.cooldown_dict[self.next_state] + rd.randint(0, 5)
+            self.animation.get_state()
+            self.state_start = time.time()
+
     def moving_forward(self):
-        if self.state == self.state_list[0]:    
+        if self.state == self.state_list[0]:
             self.position[0] -= self.vitesse
             self.animation_position[0] -= self.vitesse
             
@@ -586,10 +588,17 @@ class TITAN_Boss(Bot):
             self.is_dead = True
 
 
-
+    def collision_detection(self):
+        cond = True
+        for entity in self.entity_list:
+            if isinstance(entity, turret.Turret):
+                if self.is_colliding(entity):
+                    self.colliding_damage(entity)
+                cond = False
+        return cond
+                
     def is_colliding(self, cible):
         if self.rect.colliderect(cible.rect):
-            self.colliding_damage(cible)
             return True
         else: return False
     
@@ -603,8 +612,8 @@ class TITAN_Boss(Bot):
         
         # hitbox
         if self.show_hitbox:
-            pg.draw.rect(fenetre, (0,255,0), (self.rect.x, self.rect.y, self.rect.width, self.rect.height), 1)
-        
+            pg.draw.rect(fenetre, (0,255,0), self.rect, 1)
+
         if self.vie == self.vie_max:
             return
         

@@ -240,7 +240,7 @@ class TITAN_Animation(pg.sprite.Sprite):
 
     def render(self, fenetre):
         # hitbox
-        pg.draw.rect(fenetre, (255,0,0), (self.rect.x, self.rect.y, self.rect.width, self.rect.height), 1)
+        #pg.draw.rect(fenetre, (255,0,0), (self.rect.x, self.rect.y, self.rect.width, self.rect.height), 1)
         fenetre.blit(self.image, self.rect)
 
 if __name__ == "__main__":
