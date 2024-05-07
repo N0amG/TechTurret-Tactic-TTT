@@ -7,7 +7,7 @@ import time
 
 from abc import ABC, abstractmethod
 from pygame import BLEND_RGB_ADD
-
+import math
 
 class Bot_Wave_Spawner:
     def __init__(self, jeu):
@@ -65,6 +65,7 @@ class Bot_Wave_Spawner:
             self.jeu.game_entities_list.append(Basic_Bot(self.jeu, y, x, self.id))
         self.id += 1
         self.spawned += 1
+
 
 class Bot(pg.sprite.Sprite):
     def __init__(self, jeu, x, y, id, vie, degats, vitesse, portee, cadence, name, path, nb_images = 8, coef = (66, 84), flip = True, fps = 90):
@@ -155,6 +156,7 @@ class Bot(pg.sprite.Sprite):
 
         # Dessin de la barre rouge
         pg.draw.rect(fenetre, (255, 0, 0), (position_barre_rouge[0], position_barre_rouge[1], self.rect.width - largeur_barre_verte, 5))
+
 
 class Basic_Bot(Bot):
     def __init__(self, jeu, x, y, id):
@@ -498,10 +500,14 @@ class TITAN_Boss(Bot):
         self.cooldown_dict = {"attack_1" : 5, "attack_2" : 10, "shield" : 10, "death_beam" : 15}
         self.duration_dict = {"attack_1" : 5, "attack_2" : 10, "shield" : 10, "death_beam" : 15}
         
+        self.last_shot = time.time()
+        
+        self.projectile_list = []
+        
         self.next_state= "" # in [attack_1, attack_2, shield, death_beam]
         self.next_state_start = None
         
-        self.state = self.state_list[0]
+        self.state = self.state_list[3]
         self.state_start = time.time()
         
         self.phase = 0
@@ -531,7 +537,9 @@ class TITAN_Boss(Bot):
         elif self.phase == 0: self.phase_0()
                 
         elif self.phase == 1: self.phase_1()
-
+        
+        self.state_action()
+        
         #gere le changement de phase (pas testé)
         if self.animation.is_animation_done:
             if self.state == self.state_list[6]:
@@ -541,9 +549,7 @@ class TITAN_Boss(Bot):
                 self.animation.get_state()
     
     def phase_0(self):
-        if self.state == self.state_list[0] and self.phase == 0:    
-            self.moving_forward()
-            
+        if self.state == self.state_list[0] and self.phase == 0:
             if self.position[0] <= 1080:
                 self.phase = 1
 
@@ -576,6 +582,53 @@ class TITAN_Boss(Bot):
             
             self.rect.x, self.rect.y = self.position[0], self.position[1]
             self.animation.rect.x, self.animation.rect.y = self.animation_position
+    
+    def state_action(self):
+        if self.state == "standing":
+            pass
+        elif self.state == "moving":
+            self.moving_forward()
+        elif self.state == "attack_1":
+            self.attack_1()
+        elif self.state == "attack_2":
+            self.attack_2()
+        
+        if self.projectile_list:
+            for projectile in self.projectile_list:
+                projectile.move()
+                if projectile.is_dead:
+                    self.projectile_list.remove(projectile)
+    
+    def attack_1(self):
+        if (time.time()-self.last_shot) >= 0.5:
+            self.last_shot = time.time()
+            target_list = []
+            for entity in self.entity_list:
+                if isinstance(entity, turret.Turret):
+                    target_list.append(entity)
+            
+            if target_list:
+                target = rd.choice(target_list)
+                bullet = TITAN_Basic_Projectile(self.jeu, self.position[0] + self.rect.width//2, self.position[1] + self.rect.height//2, 25, 1, target, "titan_basic_projectile")
+                self.entity_list.append(bullet)
+                self.jeu.game_entities_list.append(bullet)
+                self.projectile_list.append(bullet)
+    
+    def attack_2(self):
+        if (time.time()-self.last_shot) >= 1.5:
+            self.last_shot = time.time()
+            target_list = []
+            for entity in self.entity_list:
+                if isinstance(entity, turret.Turret):
+                    target_list.append(entity)
+            
+            if target_list:
+                target = rd.choice(target_list)
+                bullet = TITAN_Missile(self.jeu, self.position[0] + self.rect.width//2, self.position[1] + self.rect.height//2, 100, 1, target, "titan_basic_projectile")
+                self.entity_list.append(bullet)
+                self.jeu.game_entities_list.append(bullet)
+                self.projectile_list.append(bullet)
+                
     
     #update methode call at each loop in the main game loop
     def move(self):
@@ -633,6 +686,85 @@ class TITAN_Boss(Bot):
 
         # Dessin de la barre rouge
         pg.draw.rect(fenetre, (255, 0, 0), (position_barre_rouge[0], position_barre_rouge[1], self.rect.width - largeur_barre_verte, 5))
+
+
+class Projectile:
+    def __init__(self, jeu, x, y, degats, vitesse, name):
+        self.jeu = jeu
+        self.position = [x, y]
+        self.degats = degats
+        self.vitesse = vitesse
+        self.name = name
+        self.is_dead = False
+
+    def move(self):
+        if self.is_colliding(self.cible):
+            self.damage(self.cible)
+        else:
+            dx = self.cible.position[0] + self.cible.rect.width/2 - self.position[0]
+            dy = self.cible.position[1] + self.cible.rect.height/2 - self.position[1]
+            
+            distance = (dx**2 + dy**2)**0.5  # Calculate the distance between the projectile and the target
+            
+            # Normalize the direction vector
+            dx /= distance
+            dy /= distance
+            
+            # Multiply the direction by the speed to get the velocity
+            vx = self.vitesse * dx
+            vy = self.vitesse * dy
+            
+            self.vx, self.vy = vx, vy
+            
+            self.position[0] += vx
+            self.position[1] += vy
+            self.rect.x, self.rect.y = self.position[0], self.position[1]
+            
+            if self.position[0] > self.jeu.taille_fenetre[0] or self.position[0] < 0:
+                self.is_dead = True
+            
+    def is_colliding(self, cible):
+        if self.rect.colliderect(cible.rect):
+            return True
+        else: return False
+
+    def damage(self, cible):
+        cible.get_damage(self.degats)
+        self.is_dead = True
+
+    def render(self, fenetre):
+        angle = math.degrees(math.atan2(self.vy, self.vx)) 
+        fenetre.blit(pg.transform.rotate(self.image, -angle), (self.position[0], self.position[1]))
+        #afficher la hitbox
+        pg.draw.rect(fenetre, (255,0,0), (self.rect.x, self.rect.y, self.rect.width, self.rect.height), 1)
+
+class TITAN_Basic_Projectile(Projectile):
+    
+    def __init__(self, jeu, x, y, degats, vitesse, cible, name):
+        super().__init__(jeu, x, y, degats, vitesse, name)
+        self.image = pg.image.load("assets/images/projectiles/titan_projectile/basic_projectile.png").convert_alpha()
+        self.image = pg.transform.scale(self.image, (8*5, 1*5))
+        self.rect = self.image.get_rect()
+        self.cible = cible
+        self.vx, self.vy = 0, 0
+        
+class TITAN_Missile(Projectile):
+    
+    def __init__(self, jeu, x, y, degats, vitesse, cible, name):
+        super().__init__(jeu, x, y, degats, vitesse, name)
+        self.image = pg.image.load("assets/images/projectiles/titan_projectile/missile.png").convert_alpha()
+        self.image = pg.transform.scale(self.image, ((66, 68)))
+        self.rect = self.image.get_rect()
+        self.cible = cible
+        self.vx, self.vy = 0, 0
+    
+    def damage(self, cible):
+        self.rect = pg.Rect(self.rect.x - self.rect.width, self.rect.y - self.rect.height, 3 * self.rect.width, 3 * self.rect.height)
+        for entity in self.jeu.game_entities_list:
+            if isinstance(entity, turret.Turret) and self.rect.colliderect(entity.rect):
+                entity.get_damage(self.degats)
+        self.is_dead = True
+        #self.jeu.game_entities_list.append(others.Animation(self.jeu, 17, "projectiles/explosion_frames/frame_", "explosion", self.rect.x, self.rect.y, (250, 250), flip=False, loop= False, fps=120))
 
 
 if __name__ == "__main__":

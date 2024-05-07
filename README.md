@@ -2,9 +2,9 @@ TechTurret Tactic - TTT
 
 ---------------
 
-Version 0.5.12-dev
+Version 0.5.13-dev
 
-developpement du Boss TITAN : fix de bug, découpage des phase du boss en méthode
+developpement du Boss TITAN : ajout de l'attaque 1 et 2
 
 ----------------
 
