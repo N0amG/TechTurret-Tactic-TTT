@@ -497,8 +497,8 @@ class TITAN_Boss(Bot):
         self.state_list = ["moving", "standing" , "attack_1", "attack_2",
                            "shield", "death_beam", "damaged", "death"]
         
-        self.cooldown_dict = {"attack_1" : 5, "attack_2" : 10, "shield" : 10, "death_beam" : 15}
-        self.duration_dict = {"attack_1" : 5, "attack_2" : 10, "shield" : 10, "death_beam" : 15}
+        self.cooldown_dict = {"attack_1" : 4, "attack_2" : 15, "shield" : 10, "death_beam" : 15}
+        self.duration_dict = {"attack_1" : 8, "attack_2" : 10, "shield" : 10, "death_beam" : 15, "damaged" : 2, "death" : 7}
         
         self.last_shot = time.time()
         
@@ -507,10 +507,11 @@ class TITAN_Boss(Bot):
         self.next_state= "" # in [attack_1, attack_2, shield, death_beam]
         self.next_state_start = None
         
-        self.state = self.state_list[3]
+        self.state = self.state_list[0]
         self.state_start = time.time()
         
         self.phase = 0
+        self.phase_cond = True
         #self.position[0] += 300
         
         self.animation_position = [self.position[0], self.position[1]]
@@ -521,7 +522,6 @@ class TITAN_Boss(Bot):
         self.rect = pg.Rect(self.position[0], self.position[1], 360, 300)
         
 
-
         self.show_hitbox = False
         self.show_life = False
     
@@ -530,61 +530,31 @@ class TITAN_Boss(Bot):
         self.animation.update()
         #ajouter un systeme de destruction des tourelles en contact et de l'avancer si n'y a plus de tourelles
         
-        if self.collision_detection():
-            self.state = self.state_list[0]
-            self.moving_forward()
+        if self.state == "damaged":
+            pass
         
+        elif self.collision_detection():
+            self.state = self.state_list[0]
+
         elif self.phase == 0: self.phase_0()
                 
         elif self.phase == 1: self.phase_1()
         
+        elif self.phase == 2: self.phase_2()
+        
+        elif self.phase == 3: self.phase_3()
+        
         self.state_action()
-        
-        #gere le changement de phase (pas testé)
-        if self.animation.is_animation_done:
-            if self.state == self.state_list[6]:
-                self.animation.is_animation_done = False
-                self.state = self.state_list[1]
-                self.phase += 1
-                self.animation.get_state()
-    
-    def phase_0(self):
-        if self.state == self.state_list[0] and self.phase == 0:
-            if self.position[0] <= 1080:
-                self.phase = 1
 
-    def phase_1(self):
-        if self.state == self.state_list[0]:
-            self.state = self.state_list[1]
-            self.state_start = time.time()
-            self.next_state= "attack_1"
-            self.next_state_start = time.time() + self.cooldown_dict[self.next_state] + rd.randint(0, 5) #time.time() auquel la prochaine attaque sera lancée
-            
-        if self.state == self.state_list[1]:
-            if time.time() >= self.next_state_start:
-                self.state = self.next_state
-                self.animation.get_state()
-                self.next_state= ""
-                self.next_state_start = None
-                self.state_start = time.time()
-        
-        if self.state != "standing" and time.time() - self.state_start >= self.duration_dict[self.state] and self.next_state== "":
-            self.state = self.state_list[1]
-            self.next_state = "attack_1"
-            self.next_state_start = time.time() + self.cooldown_dict[self.next_state] + rd.randint(0, 5)
-            self.animation.get_state()
-            self.state_start = time.time()
-
-    def moving_forward(self):
-        if self.state == self.state_list[0]:
-            self.position[0] -= self.vitesse
-            self.animation_position[0] -= self.vitesse
-            
-            self.rect.x, self.rect.y = self.position[0], self.position[1]
-            self.animation.rect.x, self.animation.rect.y = self.animation_position
+        self.life_counter()
     
     def state_action(self):
-        if self.state == "standing":
+        
+        if self.state == "death":
+            self.death()
+        elif self.state == "damaged":
+            self.end_damaged()
+        elif self.state == "standing":
             pass
         elif self.state == "moving":
             self.moving_forward()
@@ -594,10 +564,132 @@ class TITAN_Boss(Bot):
             self.attack_2()
         
         if self.projectile_list:
-            for projectile in self.projectile_list:
-                projectile.move()
-                if projectile.is_dead:
-                    self.projectile_list.remove(projectile)
+            self.projectile_move()
+
+    def choose_next_state(self, state_list):
+        self.next_state = rd.choice(state_list)
+        self.next_state_start = time.time() + self.cooldown_dict[self.next_state] + rd.randint(0, 5)
+
+    def switch_to_next_state(self):
+        self.state = self.next_state
+        self.state_start = time.time()
+        self.animation.get_state()
+    
+    def phase_0(self):
+        if self.state == self.state_list[0] and self.phase == 0:
+            if self.position[0] <= 1080:
+                self.phase = 1
+
+    def phase_1(self):
+        if self.state == self.state_list[0]: 
+            self.state = self.state_list[1]
+            self.state_start = time.time()
+            self.choose_next_state(["attack_1", "attack_2"])
+            
+        if self.state == self.state_list[1]:
+            if time.time() >= self.next_state_start:
+                self.switch_to_next_state()
+                self.next_state= ""
+                self.next_state_start = None
+
+    
+        if self.state != "standing" and time.time() - self.state_start >= self.duration_dict[self.state] and self.next_state== "":
+            self.state = self.state_list[1]
+            self.state_start = time.time()
+            self.animation.get_state()
+            self.choose_next_state(["attack_1", "attack_2"])
+        
+    def phase_2(self):
+        if self.phase_cond: 
+            self.state = self.state_list[1]
+            self.state_start = time.time()
+            self.choose_next_state(["attack_1", "attack_2", "shield"])
+            self.phase_cond = False
+            
+        if self.state == self.state_list[1]:
+            if time.time() >= self.next_state_start:
+                self.switch_to_next_state()
+                self.next_state= ""
+                self.next_state_start = None
+
+    
+        if self.state != "standing" and time.time() - self.state_start >= self.duration_dict[self.state] and self.next_state== "":
+            self.state = self.state_list[1]
+            self.state_start = time.time()
+            self.animation.get_state()
+            self.choose_next_state(["attack_1", "attack_2", "shield"])
+    
+    def phase_3(self):
+        if self.phase_cond: 
+            self.state = self.state_list[1]
+            self.state_start = time.time()
+            self.choose_next_state(["attack_1", "attack_2", "shield", "death_beam"])
+            self.phase_cond = False
+            
+        if self.state == self.state_list[1]:
+            if time.time() >= self.next_state_start:
+                self.switch_to_next_state()
+                self.next_state= ""
+                self.next_state_start = None
+
+    
+        if self.state != "standing" and time.time() - self.state_start >= self.duration_dict[self.state] and self.next_state== "":
+            self.state = self.state_list[1]
+            self.state_start = time.time()
+            self.animation.get_state()
+            self.choose_next_state(["attack_1", "attack_2", "shield", "death_beam"])
+    
+    def moving_forward(self):
+        if self.state == self.state_list[0]:
+            self.position[0] -= self.vitesse
+            self.animation_position[0] -= self.vitesse
+            
+            self.rect.x, self.rect.y = self.position[0], self.position[1]
+            self.animation.rect.x, self.animation.rect.y = self.animation_position
+    
+    def projectile_move(self):
+        for projectile in self.projectile_list:
+            projectile.move()
+            if projectile.is_dead:
+                self.projectile_list.remove(projectile)
+    
+    def life_counter(self):
+        if self.vie == self.vie_max:
+            self.life_steps = [self.vie_max/3 * i for i in range(0, 3)]
+            #print(self.life_steps)
+        
+        if self.vie <= self.life_steps[0] and self.phase == 3:
+            self.state = self.state_list[6]
+            self.state_start = time.time()
+            self.animation.get_state()
+            self.phase = 4
+            self.phase_cond = True
+
+        elif self.vie <= self.life_steps[1] and self.phase == 2:
+            self.state = self.state_list[6]
+            self.state_start = time.time()
+            self.animation.get_state()
+            self.phase = 3
+            self.phase_cond = True
+            
+        elif self.vie <= self.life_steps[2] and self.phase == 1:
+            self.state = self.state_list[6]
+            self.state_start = time.time()
+            self.animation.get_state()
+            self.phase = 2
+            self.phase_cond = True
+
+    def end_damaged(self):
+        if self.animation.is_animation_done:
+            if self.vie > 0:
+                self.animation.is_animation_done = False
+                self.state = self.state_list[1]
+                self.state_start = time.time()
+                self.animation.get_state()
+            else:
+                self.state = self.state_list[7]
+                self.state_start = time.time()
+                self.animation.get_state()
     
     def attack_1(self):
         if (time.time()-self.last_shot) >= 0.5:
@@ -609,7 +701,7 @@ class TITAN_Boss(Bot):
             
             if target_list:
                 target = rd.choice(target_list)
-                bullet = TITAN_Basic_Projectile(self.jeu, self.position[0] + self.rect.width//2, self.position[1] + self.rect.height//2, 25, 1, target, "titan_basic_projectile")
+                bullet = TITAN_Basic_Projectile(self.jeu, self.position[0] + self.rect.width//2, self.position[1] + self.rect.height//2, 25, 1.5, target, "titan_basic_projectile")
                 self.entity_list.append(bullet)
                 self.jeu.game_entities_list.append(bullet)
                 self.projectile_list.append(bullet)
@@ -629,7 +721,6 @@ class TITAN_Boss(Bot):
                 self.jeu.game_entities_list.append(bullet)
                 self.projectile_list.append(bullet)
                 
-    
     #update methode call at each loop in the main game loop
     def move(self):
         
@@ -640,7 +731,21 @@ class TITAN_Boss(Bot):
             self.jeu.is_game_over = True
             self.is_dead = True
 
-
+    def get_damage(self, degats):
+        if self.state == self.state_list[6] or self.state == self.state_list[7]:
+            return 
+        
+        self.vie -= degats
+        if self.vie <= 0:
+            return True
+        else:
+            return False
+    
+    def death(self):
+        if self.animation.is_animation_done and time.time() - self.state_start >= self.duration_dict[self.state]:
+            self.is_dead = True
+            self.jeu.is_game_win = True
+    
     def collision_detection(self):
         cond = True
         for entity in self.entity_list:
@@ -736,7 +841,7 @@ class Projectile:
         angle = math.degrees(math.atan2(self.vy, self.vx)) 
         fenetre.blit(pg.transform.rotate(self.image, -angle), (self.position[0], self.position[1]))
         #afficher la hitbox
-        pg.draw.rect(fenetre, (255,0,0), (self.rect.x, self.rect.y, self.rect.width, self.rect.height), 1)
+        #pg.draw.rect(fenetre, (255,0,0), (self.rect.x, self.rect.y, self.rect.width, self.rect.height), 1)
 
 class TITAN_Basic_Projectile(Projectile):
     
@@ -764,7 +869,7 @@ class TITAN_Missile(Projectile):
             if isinstance(entity, turret.Turret) and self.rect.colliderect(entity.rect):
                 entity.get_damage(self.degats)
         self.is_dead = True
-        #self.jeu.game_entities_list.append(others.Animation(self.jeu, 17, "projectiles/explosion_frames/frame_", "explosion", self.rect.x, self.rect.y, (250, 250), flip=False, loop= False, fps=120))
+        self.jeu.game_entities_list.append(others.Animation(self.jeu, 17, "projectiles/explosion_frames/frame_", "explosion", self.rect.x, self.rect.y, (250, 250), flip=False, loop= False, fps=120))
 
 
 if __name__ == "__main__":

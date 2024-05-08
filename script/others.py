@@ -146,6 +146,7 @@ class TITAN_Animation(pg.sprite.Sprite):
             self.loop_count = 0
             self.loop_number = 0
             self.image = self.state_images[self.state][self.current_frame]
+            self.is_animation_done = False
             self.get_state_properties()
         
     def get_state_properties(self):
@@ -177,14 +178,14 @@ class TITAN_Animation(pg.sprite.Sprite):
         elif self.state == "damaged":
             self.starting_frame_of_loop = 0
             self.ending_frame_of_loop = 0
-            self.loop_number = self.titan.phase
+            self.loop_number = self.titan.phase+1
 
         elif self.state == "death":
             self.starting_frame_of_loop = len(self.state_images[self.state]) - 2
             self.loop_number = 3
             self.ending_frame_of_loop = 0
             self.stay_at_last_frame = True
-            
+        
     
     def update(self):
         
@@ -208,7 +209,6 @@ class TITAN_Animation(pg.sprite.Sprite):
                 if self.current_frame == 0:
                     self.current_frame = self.starting_frame_of_loop
 
-
             if self.ending_frame_of_loop > 0:
                 if self.current_frame == self.ending_frame_of_loop:
                     self.current_frame = self.starting_frame_of_loop
@@ -217,11 +217,6 @@ class TITAN_Animation(pg.sprite.Sprite):
                 if self.loop_count >= self.loop_number:
                     self.stay_at_last_frame = True
                     self.is_animation_done = True
-                    if self.state == "damaged":
-                        self.get_state()
-                    
-                    
-
 
                 if self.stay_at_last_frame:
                     if self.loop_count >= self.loop_number:
@@ -237,6 +232,8 @@ class TITAN_Animation(pg.sprite.Sprite):
                 if self.current_frame == len(self.state_images[self.state]) - 1:
                     #évite les artefacts visuels
                     self.is_dead = True
+        
+        #print(self.loop_number, self.loop_count)
 
     def render(self, fenetre):
         # hitbox

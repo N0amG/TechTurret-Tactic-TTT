@@ -2,9 +2,9 @@ TechTurret Tactic - TTT
 
 ---------------
 
-Version 0.5.13-dev
+Version 0.5.14
 
-developpement du Boss TITAN : ajout de l'attaque 1 et 2
+developpement du Boss TITAN : ajout de de toutes les phases, gestion de phase, gestion de damage et de death (reste shield, death beam et équilibrage des cooldown d'attaque)
 
 ----------------
 

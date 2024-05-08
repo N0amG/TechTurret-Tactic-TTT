@@ -155,6 +155,9 @@ class Basic_Turret(Turret):
                         if isinstance(entity, enemy.StealthBlack_Bot):
                             if entity.stealth == True:
                                 continue
+                        if isinstance(entity, enemy.TITAN_Boss):
+                            if entity.state == "death":
+                                continue
                         if entity.position[0] <= self.position[0] + self.portee and self.rect.colliderect((self.position[0], entity.position[1], entity.rect.width, entity.rect.height)):
                             shoot = True
                             break
@@ -204,6 +207,9 @@ class Laser_Turret(Turret):
             for entity in self.jeu.game_entities_list:
                 if isinstance(entity, enemy.Bot):
                     if not isinstance(entity, enemy.Drone_Bot):
+                        if isinstance(entity, enemy.TITAN_Boss):
+                            if entity.state == "death":
+                                continue
                         if isinstance(entity, enemy.StealthBlack_Bot):
                             if entity.stealth == True:
                                 continue
@@ -276,6 +282,9 @@ class Plasma_Turret(Turret):
             for entity in self.jeu.game_entities_list:
                 if isinstance(entity, enemy.Bot):
                     if not isinstance(entity, enemy.Drone_Bot):
+                        if isinstance(entity, enemy.TITAN_Boss):
+                            if entity.state == "death":
+                                continue
                         if isinstance(entity, enemy.StealthBlack_Bot):
                             if entity.stealth == True:
                                 continue
@@ -373,9 +382,12 @@ class BlackHole_Turret(Turret):
             shoot = False
             for entity in self.jeu.game_entities_list:
                 if isinstance(entity, enemy.Bot):
+                    if isinstance(entity, enemy.TITAN_Boss):
+                        if entity.state == "death":
+                            continue
                     if isinstance(entity, enemy.StealthBlack_Bot):
-                            if entity.stealth == True:
-                                continue
+                        if entity.stealth == True:
+                            continue
                     if entity.position[0] <= self.position[0] + self.portee and self.rect.colliderect((self.position[0], entity.position[1], entity.rect.width, entity.rect.height)):
                         shoot = True
                         break
@@ -515,6 +527,9 @@ class Omni_Turret(Turret):
                 for entity in self.entity_list:
                     if isinstance(entity, enemy.Bot):
                         if not isinstance(entity, enemy.Drone_Bot):
+                            if isinstance(entity, enemy.TITAN_Boss):
+                                if entity.state == "death":
+                                    continue
                             if isinstance(entity, enemy.StealthBlack_Bot):
                                 if entity.stealth == True:
                                     continue
