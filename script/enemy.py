@@ -498,7 +498,7 @@ class TITAN_Boss(Bot):
                            "shield", "death_beam", "damaged", "death"]
         
         self.cooldown_dict = {"attack_1" : 4, "attack_2" : 15, "shield" : 10, "death_beam" : 15}
-        self.duration_dict = {"attack_1" : 8, "attack_2" : 10, "shield" : 10, "death_beam" : 15, "damaged" : 2, "death" : 7}
+        self.duration_dict = {"attack_1" : 8, "attack_2" : 10, "shield" : 5, "death_beam" : 15, "damaged" : 2, "death" : 7}
         
         self.last_shot = time.time()
         
@@ -520,8 +520,8 @@ class TITAN_Boss(Bot):
         
         self.position = [self.position[0] + 225, self.position[1] + 190]
         self.rect = pg.Rect(self.position[0], self.position[1], 360, 300)
-        
 
+        
         self.show_hitbox = False
         self.show_life = False
     
@@ -562,7 +562,8 @@ class TITAN_Boss(Bot):
             self.attack_1()
         elif self.state == "attack_2":
             self.attack_2()
-        
+        elif self.state == "shield":
+            pass
         if self.projectile_list:
             self.projectile_move()
 
@@ -601,12 +602,12 @@ class TITAN_Boss(Bot):
         
     def phase_2(self):
         if self.phase_cond: 
-            self.state = self.state_list[1]
+            self.state = self.state_list[4]
             self.state_start = time.time()
             self.choose_next_state(["attack_1", "attack_2", "shield"])
             self.phase_cond = False
             
-        if self.state == self.state_list[1]:
+        if self.state == self.state_list[4]:
             if time.time() >= self.next_state_start:
                 self.switch_to_next_state()
                 self.next_state= ""
@@ -720,7 +721,8 @@ class TITAN_Boss(Bot):
                 self.entity_list.append(bullet)
                 self.jeu.game_entities_list.append(bullet)
                 self.projectile_list.append(bullet)
-                
+
+
     #update methode call at each loop in the main game loop
     def move(self):
         
@@ -732,7 +734,7 @@ class TITAN_Boss(Bot):
             self.is_dead = True
 
     def get_damage(self, degats):
-        if self.state == self.state_list[6] or self.state == self.state_list[7]:
+        if self.state == self.state_list[4] or self.state == self.state_list[6] or self.state == self.state_list[7]:
             return 
         
         self.vie -= degats
@@ -871,6 +873,26 @@ class TITAN_Missile(Projectile):
         self.is_dead = True
         self.jeu.game_entities_list.append(others.Animation(self.jeu, 17, "projectiles/explosion_frames/frame_", "explosion", self.rect.x, self.rect.y, (250, 250), flip=False, loop= False, fps=120))
 
+class TITAN_Shield:
+    
+    def __init__(self, jeu, x, y, name, titan):
+        self.jeu = jeu
+        self.position = [x, y]
+        self.name = name
+        self.is_dead = False
+        self.titan = titan
+        self.rect = pg.Rect(self.position[0], self.position[1], 50, 320)
+        
+    
+    def move(self):
+        pass
+    
+    def get_damage(self, degats):
+        pass
+    
+    def render(self, fenetre):
+        pg.draw.rect(fenetre, (255, 0, 0), self.rect)
+        
 
 if __name__ == "__main__":
     import game
