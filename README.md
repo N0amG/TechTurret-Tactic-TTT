@@ -2,9 +2,9 @@ TechTurret Tactic - TTT
 
 ---------------
 
-Version 0.5.15
+Version 0.5.16
 
-developpement du Boss TITAN : ajout du shield
+developpement du Boss TITAN : ajout du death beam + coup au corps a corps + amélioration des mouvement
 
 ----------------
 

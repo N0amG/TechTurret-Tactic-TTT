@@ -54,6 +54,7 @@ class Turret:
         self.disabled_duration : int = 0
         self.disabled_start = 0
         
+        self.summon_time = time.time()
         self.is_dead = False
 
         

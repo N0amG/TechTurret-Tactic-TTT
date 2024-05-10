@@ -497,8 +497,8 @@ class TITAN_Boss(Bot):
         self.state_list = ["moving", "standing" , "attack_1", "attack_2",
                            "shield", "death_beam", "damaged", "death"]
         
-        self.cooldown_dict = {"attack_1" : 4, "attack_2" : 15, "shield" : 10, "death_beam" : 15}
-        self.duration_dict = {"attack_1" : 8, "attack_2" : 10, "shield" : 5, "death_beam" : 15, "damaged" : 2, "death" : 7}
+        self.cooldown_dict = {"attack_1" : 2, "attack_2" : 5, "shield" : 5, "death_beam" : 5}
+        self.duration_dict = {"attack_1" : 8, "attack_2" : 10, "shield" : 5, "death_beam" : 11, "damaged" : 2, "death" : 7}
         
         self.last_shot = time.time()
         
@@ -521,7 +521,8 @@ class TITAN_Boss(Bot):
         self.position = [self.position[0] + 225, self.position[1] + 190]
         self.rect = pg.Rect(self.position[0], self.position[1], 360, 300)
 
-        
+        self.death_beam_projectile = None
+        self.last_punch = 0
         self.show_hitbox = False
         self.show_life = False
     
@@ -533,9 +534,9 @@ class TITAN_Boss(Bot):
         if self.state == "damaged":
             pass
         
-        elif self.collision_detection():
+        elif self.collision_detection() or self.collision_detection_infront():
             self.state = self.state_list[0]
-
+            
         elif self.phase == 0: self.phase_0()
                 
         elif self.phase == 1: self.phase_1()
@@ -564,6 +565,9 @@ class TITAN_Boss(Bot):
             self.attack_2()
         elif self.state == "shield":
             pass
+        elif self.state == "death_beam":
+            self.death_beam()
+            
         if self.projectile_list:
             self.projectile_move()
 
@@ -585,7 +589,7 @@ class TITAN_Boss(Bot):
         if self.state == self.state_list[0]: 
             self.state = self.state_list[1]
             self.state_start = time.time()
-            self.choose_next_state(["attack_1", "attack_2"])
+            self.choose_next_state(["death_beam"]) # "attack_1", "attack_2"
             
         if self.state == self.state_list[1]:
             if time.time() >= self.next_state_start:
@@ -601,13 +605,13 @@ class TITAN_Boss(Bot):
             self.choose_next_state(["attack_1", "attack_2"])
         
     def phase_2(self):
-        if self.phase_cond: 
-            self.state = self.state_list[4]
+        if self.phase_cond or self.state == self.state_list[0]: 
+            self.state = self.state_list[1]
             self.state_start = time.time()
             self.choose_next_state(["attack_1", "attack_2", "shield"])
             self.phase_cond = False
             
-        if self.state == self.state_list[4]:
+        if self.state == self.state_list[1]:
             if time.time() >= self.next_state_start:
                 self.switch_to_next_state()
                 self.next_state= ""
@@ -621,7 +625,7 @@ class TITAN_Boss(Bot):
             self.choose_next_state(["attack_1", "attack_2", "shield"])
     
     def phase_3(self):
-        if self.phase_cond: 
+        if self.phase_cond or self.state == self.state_list[0]: 
             self.state = self.state_list[1]
             self.state_start = time.time()
             self.choose_next_state(["attack_1", "attack_2", "shield", "death_beam"])
@@ -722,6 +726,14 @@ class TITAN_Boss(Bot):
                 self.jeu.game_entities_list.append(bullet)
                 self.projectile_list.append(bullet)
 
+    def death_beam(self):
+        if time.time() - self.state_start >= 5:
+            if self.death_beam_projectile == None:
+                self.death_beam_projectile = TITAN_Death_Beam(self)
+            else:
+                self.death_beam_projectile.update()
+                if self.death_beam_projectile.is_dead:
+                    self.death_beam_projectile = None
 
     #update methode call at each loop in the main game loop
     def move(self):
@@ -756,15 +768,26 @@ class TITAN_Boss(Bot):
                     self.colliding_damage(entity)
                 cond = False
         return cond
-                
+    
+    def collision_detection_infront(self):
+        cond = True
+        for entity in self.entity_list:
+            if isinstance(entity, turret.Turret):
+                if self.rect.colliderect((self.rect.x, entity.rect.y, entity.rect.width, entity.rect.height)) and entity.rect.x <= self.rect.x + self.rect.width:
+                    cond = False
+                    break
+        return cond
     def is_colliding(self, cible):
         if self.rect.colliderect(cible.rect):
             return True
         else: return False
     
     def colliding_damage(self, cible):
-        cible.vie = 0
-        cible.is_dead = True
+        if time.time() - self.last_punch >= 2:
+            if cible.vie == cible.vie_max and cible.vie_max <= 250 and time.time() - cible.summon_time > 0.5:
+                self.jeu.kamas += cible.prix
+            cible.get_damage(250)
+            self.last_punch = time.time()
 
     def render(self, fenetre):
         
@@ -873,27 +896,61 @@ class TITAN_Missile(Projectile):
         self.is_dead = True
         self.jeu.game_entities_list.append(others.Animation(self.jeu, 17, "projectiles/explosion_frames/frame_", "explosion", self.rect.x, self.rect.y, (250, 250), flip=False, loop= False, fps=120))
 
-class TITAN_Shield:
-    
-    def __init__(self, jeu, x, y, name, titan):
-        self.jeu = jeu
-        self.position = [x, y]
-        self.name = name
-        self.is_dead = False
-        self.titan = titan
-        self.rect = pg.Rect(self.position[0], self.position[1], 50, 320)
-        
-    
-    def move(self):
-        pass
-    
-    def get_damage(self, degats):
-        pass
-    
-    def render(self, fenetre):
-        pg.draw.rect(fenetre, (255, 0, 0), self.rect)
-        
 
+class TITAN_Death_Beam(pg.sprite.Sprite):
+    def __init__(self, titan):
+        super().__init__()
+        self.titan = titan
+        self.jeu = titan.jeu
+        self.entity_list = titan.entity_list
+        self.position = [self.titan.position[0]-100, self.titan.position[1]-80]
+        self.is_dead = False
+        self.fps = 50
+        self.prop = 7
+        self.rect = pg.Rect(self.position[0], self.position[1], 64, 64)
+        self.animation_list= [others.Animation(self.jeu, 13, "projectiles/titan_projectile/death_beam/death_beam_spawn_frames/frame_", "death_beam", self.rect.x, self.rect.y, (64*self.prop, 64*self.prop), flip=True, loop= False, fps=self.fps)]
+        self.jeu.game_entities_list.append(self.animation_list[0])
+        
+        self.damaged_turret = []
+        self.target_turret = []
+    
+    
+    def add_next_animation(self):
+        current_animation = self.animation_list[-1]
+        if current_animation.position[0] < self.jeu.largeur_interface + 250:
+            if current_animation.current_frame == 12:
+                self.is_dead = True
+                return
+            
+        elif not self.is_dead and current_animation.current_frame == 0:
+            
+            self.animation_list.append(others.Animation(self.jeu, 13, "projectiles/titan_projectile/death_beam/death_beam_frames/frame_", "death_beam", current_animation.rect.x - 32*self.prop, self.rect.y, (32*self.prop, 64*self.prop), flip=True, loop= False, fps=self.fps))
+            self.jeu.game_entities_list.append(self.animation_list[-1])
+    
+    def damage_turret(self):
+        if self.target_turret != []:
+            self.target_turret = list(set(self.target_turret))
+            for turret in self.target_turret:
+                if turret not in self.damaged_turret:
+                    turret.get_damage(250)
+            self.damaged_turret = self.target_turret[:]
+            self.target_turret = []
+    
+    def turret_collision(self):
+        for frame in self.animation_list:
+            for entity in self.entity_list:
+                if isinstance(entity, turret.Turret) and frame.rect.colliderect(entity.rect):
+                    if frame.current_frame == 9 and frame.is_active:
+                        if self.titan.rect.colliderect((self.titan.rect.x, entity.rect.y, entity.rect.width, entity.rect.height)):
+                            self.target_turret.append(entity)
+            if frame.current_frame == 9:
+                frame.is_active = False
+        self.damage_turret()
+        
+    def update(self):
+        self.add_next_animation()
+        self.turret_collision()
+        
 if __name__ == "__main__":
     import game
     jeu = game.Game()

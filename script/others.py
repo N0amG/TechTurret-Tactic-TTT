@@ -30,8 +30,12 @@ class Animation(pg.sprite.Sprite):
         self.duration = duration
         self.start_timer = pg.time.get_ticks()
         
+        if name == "death_beam":
+            self.is_active = True
+        
         self.is_dead = False
         
+
     def get_images(self, nb_images, path) -> list:
         images = []
         for i in range(nb_images):
