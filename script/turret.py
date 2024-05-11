@@ -421,19 +421,21 @@ class BlackHole_Projectile(Projectile):
         def find_shoot_spot(self):
             self.bot_list = []
             for entity in self.jeu.game_entities_list:
-                if isinstance(entity, enemy.Bot):                
+                if isinstance(entity, enemy.Bot) or isinstance(entity, enemy.TITAN_Boss):                
                     if self.rect.colliderect((self.position[0], entity.position[1], entity.rect.width, entity.rect.height)):
                         self.bot_list.append(entity)
             
             if len(self.bot_list) > 0:
-                self.bot_list.sort(key=lambda bot: bot.position[0])
+                self.bot_list.sort(key=lambda bot: bot.position[0]+bot.rect.width)
+                self.target_width = self.bot_list[-1].rect.width
+                self.cible = self.bot_list[-1]
                 return self.bot_list[-1].position
                 
         def move(self):
             
             if self.state == "projectile":
                 if self.target is not None:
-                    if self.position[0] < self.target[0]:
+                    if self.position[0] < self.target[0] + self.target_width:
                         self.position[0] += self.vitesse
                         self.rect.x += self.vitesse
                         self.rect.y = self.position[1]    
@@ -444,34 +446,39 @@ class BlackHole_Projectile(Projectile):
                         self.position[1] = self.rect.y
                         self.last_time = time.time()
                 
-                if self.position[0] > self.jeu.taille_fenetre[0]:
+                if self.position[0] > self.jeu.taille_fenetre[0]-125:
                     self.is_dead = True
             
             
             else:
-                
                 if time.time() - self.last_time >= self.duree:
                     self.last_time = time.time()
                     self.is_dead = True
                     
-                
                 diff = list(filter(lambda elt: isinstance(elt, enemy.Bot),filter(lambda elt: elt not in self.bot_list, self.jeu.game_entities_list)))
                 if len(diff):
                     for bot in diff:
                         if self.rect.colliderect((self.position[0], bot.position[1], bot.rect.width, bot.rect.height)):
                             self.bot_list.append(bot)
-                
+
                 for bot in self.bot_list:
-                    if self.is_colliding(bot):
-                        bot.get_damage(self.degats)
                     
-                    if bot.position[0] <= self.position[0] + self.range and bot.position[0] >= self.position[0] - self.range and not isinstance(bot, enemy.TITAN_Boss):
+                    if bot.position[0] <= self.position[0] + self.range and bot.position[0] >= self.position[0] - self.range - self.target_width:
                         if bot.position[0] > self.position[0]:
                             bot.position[0] -= self.attraction_force
+                            if isinstance(bot, enemy.TITAN_Boss):
+                                bot.animation_position[0] -= self.attraction_force
                         else:
                             bot.position[0] += self.attraction_force
-                        bot.rect.x = bot.position[0]         
-        
+                            if isinstance(bot, enemy.TITAN_Boss):
+                                bot.animation_position[0] += self.attraction_force
+                        
+                        bot.rect.x = bot.position[0]
+                        if not isinstance(bot, enemy.TITAN_Boss):
+                            bot.animation.rect.x = bot.position[0]
+                    if self.is_colliding(bot):
+                        bot.get_damage(self.degats)
+                        
         def render(self, fenetre):
             
             # Dessiner la hitbox 

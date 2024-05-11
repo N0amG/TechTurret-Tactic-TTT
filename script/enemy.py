@@ -96,7 +96,7 @@ class Bot(pg.sprite.Sprite):
         self.show_hitbox = False
 
     def __str__(self):
-        return f"Bot id : {self.id}"
+        return f"Bot id : {self.id}, name : {self.name}"
     
     def update(self):
         self.animation.update()
@@ -492,14 +492,15 @@ class StealthBlack_Bot(Bot):
 
 class TITAN_Boss(Bot):
     def __init__(self, jeu, x, y, id):
-        super().__init__(jeu, x, y, id, vie = 2500, degats=0, vitesse= 0.25, portee = 0, cadence = 5, path ="enemy/titan/titan_moving_frames/frame_", nb_images=4, coef = (160*5, 96*5), name="TITAN_Boss", fps= 45)
+        super().__init__(jeu, x, y, id, vie = 2500, degats=0, vitesse= 0.05, portee = 0, cadence = 5, path ="enemy/titan/titan_moving_frames/frame_", nb_images=4, coef = (160*5, 96*5), name="TITAN_Boss", fps= 45)
 
         self.state_list = ["moving", "standing" , "attack_1", "attack_2",
                            "shield", "death_beam", "damaged", "death"]
         
-        self.cooldown_dict = {"attack_1" : 2, "attack_2" : 5, "shield" : 5, "death_beam" : 5}
-        self.duration_dict = {"attack_1" : 8, "attack_2" : 10, "shield" : 5, "death_beam" : 11, "damaged" : 2, "death" : 7}
-        
+        self.cooldown_dict = {"punch" : 2, "attack_1" : 15, "attack_2" : 20, "shield" : 25, "death_beam" : 100}
+        self.duration_dict = {"attack_1" : 8, "attack_2" : 5, "shield" : 10, "death_beam" : 11, "damaged" : 2, "death" : 7}
+        self.last_time_ability_dict = {"punch" : 0, "attack_1" : 0, "attack_2" : 0, "shield" : 0, "death_beam" : 0}
+
         self.last_shot = time.time()
         
         self.projectile_list = []
@@ -522,7 +523,7 @@ class TITAN_Boss(Bot):
         self.rect = pg.Rect(self.position[0], self.position[1], 360, 300)
 
         self.death_beam_projectile = None
-        self.last_punch = 0
+
         self.show_hitbox = False
         self.show_life = False
     
@@ -571,10 +572,27 @@ class TITAN_Boss(Bot):
         if self.projectile_list:
             self.projectile_move()
 
-    def choose_next_state(self, state_list):
+    def choose_next_state(self, state_list, max_delay = 8):
+        state_list_copy = state_list.copy()
+        state_cooldown_list = []
+        for state in state_list_copy:
+            cooldown = self.last_time_ability_dict[state] + self.cooldown_dict[state]
+            if cooldown > time.time():
+                state_list.remove(state)
+                state_cooldown_list.append((state, cooldown))
+        
+        # si aucun état n'est disponible on prend celui qui a le cooldown le plus bas
+        if state_list == []:
+            state_tuple = min(state_cooldown_list, key=lambda item: item[1])
+            self.next_state = state_tuple[0]
+            self.next_state_start = state_tuple[1] + rd.randint(0, max_delay)
+            self.last_time_ability_dict[self.next_state] = self.next_state_start
+            return
+        
         self.next_state = rd.choice(state_list)
-        self.next_state_start = time.time() + self.cooldown_dict[self.next_state] + rd.randint(0, 5)
-
+        self.next_state_start = time.time() + rd.randint(0, max_delay)
+        self.last_time_ability_dict[self.next_state] = self.next_state_start
+        
     def switch_to_next_state(self):
         self.state = self.next_state
         self.state_start = time.time()
@@ -589,7 +607,7 @@ class TITAN_Boss(Bot):
         if self.state == self.state_list[0]: 
             self.state = self.state_list[1]
             self.state_start = time.time()
-            self.choose_next_state(["death_beam"]) # "attack_1", "attack_2"
+            self.choose_next_state(["attack_1", "attack_2"])
             
         if self.state == self.state_list[1]:
             if time.time() >= self.next_state_start:
@@ -628,8 +646,11 @@ class TITAN_Boss(Bot):
         if self.phase_cond or self.state == self.state_list[0]: 
             self.state = self.state_list[1]
             self.state_start = time.time()
-            self.choose_next_state(["attack_1", "attack_2", "shield", "death_beam"])
-            self.phase_cond = False
+            if self.phase_cond :
+                self.choose_next_state(["death_beam"])
+                self.phase_cond = False
+            else : 
+                self.choose_next_state(["attack_1", "attack_2", "shield", "death_beam"])
             
         if self.state == self.state_list[1]:
             if time.time() >= self.next_state_start:
@@ -783,11 +804,11 @@ class TITAN_Boss(Bot):
         else: return False
     
     def colliding_damage(self, cible):
-        if time.time() - self.last_punch >= 2:
+        if time.time() - self.last_time_ability_dict['punch'] >= self.cooldown_dict['punch']:
             if cible.vie == cible.vie_max and cible.vie_max <= 250 and time.time() - cible.summon_time > 0.5:
                 self.jeu.kamas += cible.prix
             cible.get_damage(250)
-            self.last_punch = time.time()
+            self.last_time_ability_dict['punch'] = time.time()
 
     def render(self, fenetre):
         

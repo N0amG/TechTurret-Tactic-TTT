@@ -96,10 +96,11 @@ class Game:
         self.bot_wave_spawner = enemy.Bot_Wave_Spawner(jeu=self)
         
         #test et placement des éléments    
-        [[self.game_entities_list.append(turret.Turret_selection(self ,self.matrice_tourelle[j][i][1], self.matrice_tourelle[j][i][0], "Plasma Turret")) for i in range(0,8)] for j in range(0,5)]
-
+        #[[self.game_entities_list.append(turret.Turret_selection(self ,self.matrice_tourelle[j][i][1], self.matrice_tourelle[j][i][0], "Plasma Turret")) for i in range(0,8)] for j in range(0,5)]
+    
+        self.game_entities_list.append(turret.Turret_selection(self ,self.matrice_tourelle[2][1][1], self.matrice_tourelle[2][1][0], "BlackHole Turret"))
         self.bot_wave_spawner.manual_spawn(self.matrice_bot[3][0][1], self.matrice_bot[1][0][0], "titan")
-        
+        self.bot_wave_spawner.manual_spawn(self.matrice_bot[3][0][1], self.matrice_bot[0][0][0], "b")
         #self.bot_wave_spawner.manual_spawn(self.matrice_bot[2][1][1], self.matrice_bot[2][1][0], "basic")
         self.debug_bot_timer = None
         #self.debug_bot_timer = time.time()
