@@ -118,6 +118,8 @@ class Projectile:
     def is_colliding(self, cible):
         if self.rect.colliderect(cible.rect):
             if isinstance(cible, enemy.Drone_Bot):
+                if isinstance(self, BlackHole_Projectile):
+                    return True
                 return False
             if isinstance(cible, enemy.StealthBlack_Bot):
                 if cible.stealth == True:
@@ -493,7 +495,7 @@ class BlackHole_Projectile(Projectile):
                             bot.blackhole_counter = True
                             
                     if self.is_colliding(bot):
-                        bot.get_damage(self.degats)
+                        bot.get_damage(self.degats, source="blackhole")
                 
                 if time.time() - self.last_time >= self.duree:
                     self.last_time = time.time()
@@ -621,6 +623,8 @@ class Omni_Projectile(Projectile):
         fenetre.blit(pg.transform.rotate(self.image, -angle), (self.position[0], self.position[1]))
         #afficher la hitbox
         #pg.draw.rect(fenetre, (255,0,0), (self.rect.x, self.rect.y, self.rect.width, self.rect.height), 1)
+
+
 
 
 
