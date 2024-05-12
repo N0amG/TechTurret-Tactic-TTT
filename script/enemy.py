@@ -342,12 +342,11 @@ class Incinerator_Bot(Bot):
                 if entity.position[0] >= self.position[0] - self.portee and self.rect.colliderect((self.position[0], entity.position[1], entity.rect.width, entity.rect.height)):
                     shoot = True
                     break
-        if shoot:
+        if shoot and self.fire_projectile.state == "unactive":
             self.fire_projectile.state = "active"
             self.animation.get_images(8, "enemy/incinerator_bot/active_incinerator_bot/frame_")
-
             
-        else:
+        elif not shoot and self.fire_projectile.state == "active":
             self.fire_projectile.state = "unactive"
             self.animation.get_images(8, "enemy/incinerator_bot/unactive_incinerator_bot/frame_")
             self.fire_projectile.particles = []
@@ -387,25 +386,30 @@ class Fire_Projectile:
             return
         
         #self.render_debug(fenetre)
-        
-        if self.state == "active":
-            self.particles.append([[self.position[0], self.position[1]], [2, rd.randint(0, 10) / 12 - 0.5], rd.randint(6, 9)])
+        if not self.jeu.paused:
+            if self.state == "active":
+                self.particles.append([[self.position[0], self.position[1]], [2, rd.randint(0, 10) / 12 - 0.5], rd.randint(6, 9)])
 
+                for particle in self.particles:
+                    particle[0][0] -= particle[1][0]
+                    particle[0][1] += particle[1][1]
+                    particle[2] -= 0.1
+                    pg.draw.circle(fenetre, (255, 255, 25), [int(particle[0][0]), int(particle[0][1])], int(particle[2]))
+
+                    radius = particle[2] * 2
+                    fenetre.blit(self.circle_surf(radius, (100, 20, 20)), (int(particle[0][0] - radius), int(particle[0][1] - radius)), special_flags=BLEND_RGB_ADD)
+
+                    if particle[2] <= 0 or particle[0][0] <= self.cible_x:
+                        self.particles.remove(particle)
+        else:
             for particle in self.particles:
-                particle[0][0] -= particle[1][0]
-                particle[0][1] += particle[1][1]
-                particle[2] -= 0.1
                 pg.draw.circle(fenetre, (255, 255, 25), [int(particle[0][0]), int(particle[0][1])], int(particle[2]))
-
                 radius = particle[2] * 2
                 fenetre.blit(self.circle_surf(radius, (100, 20, 20)), (int(particle[0][0] - radius), int(particle[0][1] - radius)), special_flags=BLEND_RGB_ADD)
-
-                if particle[2] <= 0 or particle[0][0] <= self.cible_x:
-                    self.particles.remove(particle)
-                   
+                
     def move(self):
         if self.state == "active":
-            for entity in self.jeu.game_entities_list:
+            for entity in reversed(self.jeu.game_entities_list):
                 if isinstance(entity, turret.Turret):
                     if self.is_colliding(entity):
                         distance = ((entity.position[0] - self.position[0])**2 + (entity.position[1] - self.position[1])**2)**0.5
@@ -423,10 +427,11 @@ class Fire_Projectile:
 
 class Ender_Bot(Bot):
     def __init__(self, jeu, x, y, id):
-        super().__init__(jeu, x, y, id, vie = 180, degats=80, vitesse= 0.1, portee = 10, cadence = 3, path ="enemy/ender_bot_frames/frame_", name="Ender_Bot", fps= 60)
+        super().__init__(jeu, x, y, id, vie = 180, degats=80, vitesse= 0.1, portee = 10, cadence = 2.5, path ="enemy/ender_bot_frames/frame_", name="Ender_Bot", fps= 60)
         self.special_ability_cooldown = 5
         self.last_ability_use = time.time() - self.special_ability_cooldown  # The last time the special ability was used
         self.ability_state = "unactive"
+        self.blackhole_counter = False
             
     def update(self):
         self.animation.update()
@@ -440,22 +445,29 @@ class Ender_Bot(Bot):
             self.teleportation_animation_end = None
         
     def move(self):
+        self.update()
         
         if self.ability_state == "active":
             if self.teleportation_animation_start != None:
                 if self.teleportation_animation_start.is_dead:
 
                     self.teleportation_animation_start = None
-                    # Teleport the enemy to a new position
-                    line = rd.randint(0,len(self.jeu.matrice_bot)-1)
-                    while self.jeu.matrice_bot[line][0][0] - self.rect.height//2 == self.position[1]:
+                    
+                    if not self.blackhole_counter:
+                        # Teleport the enemy to a new position
                         line = rd.randint(0,len(self.jeu.matrice_bot)-1)
-                    self.position[1] = self.jeu.matrice_bot[line][0][0] - self.rect.height//2
-                    self.rect.y = self.position[1]
-                    self.animation.rect.y = self.position[1]
-                    self.teleportation_animation_end = others.Animation(self.jeu, 16, "projectiles/teleportation_frames/frame_", "teleportation", self.rect.x-30, self.rect.y-20, (120, 160), flip=False, loop= False, fps=120, reverse=True)
-                    self.jeu.game_entities_list.append(self.teleportation_animation_end)
-            
+                        while self.jeu.matrice_bot[line][0][0] - self.rect.height//2 == self.position[1]:
+                            line = rd.randint(0,len(self.jeu.matrice_bot)-1)
+                        self.position[1] = self.jeu.matrice_bot[line][0][0] - self.rect.height//2
+                        self.rect.y = self.position[1]
+                        self.animation.rect.y = self.position[1]
+                        self.teleportation_animation_end = others.Animation(self.jeu, 16, "projectiles/teleportation_frames/frame_", "teleportation", self.rect.x-30, self.rect.y-20, (120, 160), flip=False, loop= False, fps=120, reverse=True)
+                        self.jeu.game_entities_list.append(self.teleportation_animation_end)
+                
+                if self.teleportation_animation_start == None and self.blackhole_counter:
+                    self.ability_state = "unactive"
+                    self.last_ability_use = time.time()  # Update the last ability use time
+                    
             if self.teleportation_animation_end != None:
                 if self.teleportation_animation_end.is_dead:
                     self.ability_state = "unactive"
@@ -475,9 +487,13 @@ class StealthBlack_Bot(Bot):
         self.animation.entity = self
         self.stealth = True
         self.stealth_cooldown = 5
+        self.last_shot = 0
         
     def update(self):
         self.animation.update()
+        
+        if time.time() - self.last_shot >= self.stealth_cooldown:
+            self.stealth = True
 
     
     def attack(self, cible):
@@ -488,6 +504,7 @@ class StealthBlack_Bot(Bot):
         if self.stealth:
             return False
         return super().get_damage(degats)
+
 
 
 class TITAN_Boss(Bot):
@@ -838,7 +855,6 @@ class TITAN_Boss(Bot):
         # Dessin de la barre rouge
         pg.draw.rect(fenetre, (255, 0, 0), (position_barre_rouge[0], position_barre_rouge[1], self.rect.width - largeur_barre_verte, 5))
 
-
 class Projectile:
     def __init__(self, jeu, x, y, degats, vitesse, name):
         self.jeu = jeu
@@ -916,7 +932,6 @@ class TITAN_Missile(Projectile):
                 entity.get_damage(self.degats)
         self.is_dead = True
         self.jeu.game_entities_list.append(others.Animation(self.jeu, 17, "projectiles/explosion_frames/frame_", "explosion", self.rect.x, self.rect.y, (250, 250), flip=False, loop= False, fps=120))
-
 
 class TITAN_Death_Beam(pg.sprite.Sprite):
     def __init__(self, titan):

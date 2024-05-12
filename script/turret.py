@@ -335,22 +335,27 @@ class Plasma_Projectile(Projectile):
             return
         
         #self.render_debug(fenetre)
-        
-        if self.state == "active":
-            self.particles.append([[self.position[0], self.position[1]], [2, randint(0, 10) / 12 - 0.5], randint(6, 9)])
+        if not self.jeu.paused:
+            if self.state == "active":
+                self.particles.append([[self.position[0], self.position[1]], [2, randint(0, 10) / 12 - 0.5], randint(6, 9)])
 
+                for particle in self.particles:
+                    particle[0][0] += particle[1][0]
+                    particle[0][1] += particle[1][1]
+                    particle[2] -= 0.1
+                    pg.draw.circle(fenetre, (255, 255, 255), [int(particle[0][0]), int(particle[0][1])], int(particle[2]))
+
+                    radius = particle[2] * 2
+                    fenetre.blit(self.circle_surf(radius, (20, 20, 60)), (int(particle[0][0] - radius), int(particle[0][1] - radius)), special_flags=BLEND_RGB_ADD)
+
+                    if particle[2] <= 0 or particle[0][0] >= self.cible_x + self.cible_width:
+                        self.particles.remove(particle)
+        else:
             for particle in self.particles:
-                particle[0][0] += particle[1][0]
-                particle[0][1] += particle[1][1]
-                particle[2] -= 0.1
                 pg.draw.circle(fenetre, (255, 255, 255), [int(particle[0][0]), int(particle[0][1])], int(particle[2]))
-
                 radius = particle[2] * 2
                 fenetre.blit(self.circle_surf(radius, (20, 20, 60)), (int(particle[0][0] - radius), int(particle[0][1] - radius)), special_flags=BLEND_RGB_ADD)
 
-                if particle[2] <= 0 or particle[0][0] >= self.cible_x + self.cible_width:
-                    self.particles.remove(particle)
-                   
     def move(self):
         if self.state == "active":
             for bot in self.jeu.game_entities_list:
@@ -395,7 +400,7 @@ class BlackHole_Turret(Turret):
             if shoot:
                 if time.time() - self.last_shot >= self.cadence:
                     self.last_shot = time.time()
-                    return BlackHole_Projectile(jeu=self.jeu, x=self.position[0]+self.rect.width, y=self.position[1]+self.rect.height//2 -5, degats=self.degats)
+                    return BlackHole_Projectile(jeu=self.jeu, blackhole_turret=self, x=self.position[0]+self.rect.width, y=self.position[1]+self.rect.height//2 -5, degats=self.degats)
             return None
         else:
             if (time.time() - self.disabled_start)  >= self.disabled_duration:
@@ -404,20 +409,21 @@ class BlackHole_Turret(Turret):
 
 class BlackHole_Projectile(Projectile):
         
-        def __init__(self, jeu, x, y, degats):
+        def __init__(self, jeu, blackhole_turret, x, y, degats):
             super().__init__(jeu, x, y, degats, vitesse = 2, name="blackHole_projectile")
-            self.color = (0, 0, 0)  
+            self.color = (0, 0, 0)
+            self.blackhole_turret = blackhole_turret
             self.rect = pg.Rect(self.position[0], self.position[1], 24, 12)  # x, y, largeur, hauteur
             self.last_time = time.time()
-            self.range = 350            
+            self.range = 350
             self.is_dead = False
-            self.last_time = time.time()
             self.duree = 5
             self.state = "projectile" # or "blackhole"
             self.image = pg.transform.scale(pg.image.load('assets/images/projectiles/blackhole_projectile.png'), (60, 60)).convert_alpha()
-            self.target = self.find_shoot_spot()
             self.attraction_force = 0.15
-        
+            self.kill_margin = 125
+            self.target = self.find_shoot_spot()
+            
         def find_shoot_spot(self):
             self.bot_list = []
             for entity in self.jeu.game_entities_list:
@@ -428,6 +434,16 @@ class BlackHole_Projectile(Projectile):
             if len(self.bot_list) > 0:
                 self.bot_list.sort(key=lambda bot: bot.position[0]+bot.rect.width)
                 self.target_width = self.bot_list[-1].rect.width
+                
+                # pour résoudre de le problème du dernier bot qui est trop proche du bord de l'écran
+                while self.bot_list and self.bot_list[-1].position[0] + self.bot_list[-1].rect.width > self.jeu.taille_fenetre[0] - self.kill_margin:
+                    self.bot_list.pop()
+                
+                if len(self.bot_list) == 0:
+                    self.is_dead = True
+                    self.blackhole_turret.last_shot -= self.last_time
+                    return None
+                
                 self.cible = self.bot_list[-1]
                 return self.bot_list[-1].position
                 
@@ -446,14 +462,11 @@ class BlackHole_Projectile(Projectile):
                         self.position[1] = self.rect.y
                         self.last_time = time.time()
                 
-                if self.position[0] > self.jeu.taille_fenetre[0]-125:
+                if self.position[0] > self.jeu.taille_fenetre[0]-self.kill_margin:
                     self.is_dead = True
             
             
             else:
-                if time.time() - self.last_time >= self.duree:
-                    self.last_time = time.time()
-                    self.is_dead = True
                     
                 diff = list(filter(lambda elt: isinstance(elt, enemy.Bot),filter(lambda elt: elt not in self.bot_list, self.jeu.game_entities_list)))
                 if len(diff):
@@ -476,8 +489,18 @@ class BlackHole_Projectile(Projectile):
                         bot.rect.x = bot.position[0]
                         if not isinstance(bot, enemy.TITAN_Boss):
                             bot.animation.rect.x = bot.position[0]
+                        if isinstance(bot, enemy.Ender_Bot):
+                            bot.blackhole_counter = True
+                            
                     if self.is_colliding(bot):
                         bot.get_damage(self.degats)
+                
+                if time.time() - self.last_time >= self.duree:
+                    self.last_time = time.time()
+                    self.is_dead = True
+                    for bot in self.bot_list:
+                        if isinstance(bot, enemy.Ender_Bot):
+                            bot.blackhole_counter = False
                         
         def render(self, fenetre):
             
@@ -488,7 +511,8 @@ class BlackHole_Projectile(Projectile):
             if self.state == "blackhole":
                 fenetre.blit(self.image, (self.position[0], self.position[1]))
             else:
-                pg.draw.rect(self.jeu.fenetre, self.color, self.rect)
+                if not self.is_dead:
+                    pg.draw.rect(self.jeu.fenetre, self.color, self.rect)
 
 
 class Shield(Turret):

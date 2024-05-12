@@ -2,19 +2,23 @@ TechTurret Tactic - TTT
 
 ---------------
 
-Version 0.6
+Version 0.6.1
 
-developpement du Boss TITAN : grosse amélioration du systeme de cooldown des attack; équilibrage des cooldown, amélioration de la dynamique et la logique des cooldown,
+    - amélioration :
+        le stealth black peut desormais redevenir invisible apres 5 secondes sans mettre de coup
+        equilibrage ender bot : cadence 3 -> 2.5 | les trous noirs l'empeche de se teleporter
 
-    - Boss TITAN terminé
+        la tourelle trou noir attend que le bot entre sur le terrain pour tirer / siun bot est trop loin elle tirreras sur le deuxieme
+----------------
 
+    - fix de bug :
+    les particules de plasma / feu active pendant que le jeu est en pause
+    le bot incinerateur attaquait en priorité les tourelles plus éloigné de lui
+    
+    les animation d'état "active" des bots tank et incinerator qui ne s'activais pas
 
--amélioration du trou noir de la tourelle :
-    arrive derriere le derniere bot au lieu de lui arriver dessus, 
-    résolution du bug de la position de l'animation des bot en mode attaque qui ne s'actualisais pas une fois toucher par le trou noir
-    résoluton d'un bug ou le trou noir n'affectais pas le boss, 
-    mort du projectle de trou noir s"il est trop loins des case du terrain,
-    correction de l'efficacité de la portee du trou noir derriere les bots qui ne prenant pas en compte la largeur du bot
+    à la fin d'une vague ont pouvait spammer le bouton vague suivante si ont ne bougeais pas la souris
+
 
 ----------------
 
