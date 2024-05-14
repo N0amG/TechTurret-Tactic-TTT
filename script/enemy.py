@@ -19,7 +19,7 @@ class Bot_Wave_Spawner:
         self.last_spawn = 0
         self.next_spawn_time = self.last_spawn + self.spawn_rate
         
-        self.bot_price_dict = {"basic" : 50, "assault" : 75,  "drone" : 25, "kamikaze" : 125, "tank" : 175, "emp" : 200, "incinerator" : 200, "ender" : 250, "stealth" : 250}
+        self.bot_price_dict = {"basic" : 50, "assault" : 75,  "drone" : 50, "kamikaze" : 125, "tank" : 175, "emp" : 200, "incinerator" : 200, "ender" : 250, "stealth" : 250}
         
         self.wave_points = 500
         self.available_points = 500
@@ -27,24 +27,16 @@ class Bot_Wave_Spawner:
         self.available_bots = ["basic",]
         self.bots_to_unlock = ["assault", "drone", "kamikaze", "tank", "emp", "incinerator", "ender", "stealth"][::-1]
         
+        self.sub_wave = 1 # total of 3 subwaves per wave. 1 = beetween 2 and 3 bots, 2 = 1/3 of the total bots minus those of subwave 1, 3 = 2/3 of the total bots
+        
+        self.list_of_bots_to_spawn = self.sort_bots(self.generate_next_bots_list())
+
         
     def update(self):
+        
         if not self.jeu.wave_ended:
-            
-            self.next_spawn()
-            
-            if time.time() >= self.next_spawn_time:
 
-                # Choisissez une coordonnée aléatoire dans la ligne
-                x, y = rd.randint(0,len(self.jeu.matrice_bot)-1), rd.randint(0,len(self.jeu.matrice_bot[0])-1)
-                x, y = self.jeu.matrice_bot[x][y]
-                
-                # fais apparaitre le bot
-                self.spawn(y, x, "basic")
-
-                return True
-                
-            if self.spawned >= self.bot_quantity:
+            if self.spawned >= self.bot_quantity or self.available_points <= self.bot_price_dict["basic"]:
                 cond = True
                 for bot in self.jeu.game_entities_list:
                     if isinstance(bot, Bot):
@@ -52,8 +44,20 @@ class Bot_Wave_Spawner:
                         break
                 if cond:
                     self.end_of_wave()
-                    return 3
+                return 3
             
+            self.next_spawn()
+            if time.time() >= self.next_spawn_time:
+
+                # Choisissez une coordonnée aléatoire dans la ligne
+                x, y = rd.randint(0,len(self.jeu.matrice_bot)-1), rd.randint(0,len(self.jeu.matrice_bot[0])-1)
+                x, y = self.jeu.matrice_bot[x][y]
+                
+                if self.list_of_bots_to_spawn:
+                    self.spawn(y, x, self.list_of_bots_to_spawn.pop(0))
+                
+                return True
+
             else:
                 return 2
         else:
@@ -67,31 +71,71 @@ class Bot_Wave_Spawner:
             for bot in self.jeu.game_entities_list:
                 if isinstance(bot, Bot):
                     nb_bot += 1
-                    
+                
             if nb_bot == 0:
                 self.next_spawn_time = time.time()
             
+
+
+
     def end_of_wave(self):
         self.jeu.wave_ended = True
         self.spawned = 0
-        
         if self.jeu.wave <= 3:
             self.bot_quantity += 5
             self.wave_points += 300
             
         elif self.jeu.wave <= 6:
             self.bot_quantity += 4
-        elif self.jeu.wave <= 10:
-            self.bot_quantity += 3
+            self.wave_points += 1000
             
+        elif self.jeu.wave <= 9:
+            self.bot_quantity += 3
+            self.wave_points += 1500
+                      
         if self.spawn_rate > 1:
-            self.spawn_rate -= 0.5
-        
+            self.spawn_rate -= 0.25
         if self.bots_to_unlock:
             self.available_bots.append(self.bots_to_unlock.pop())
         
+        self.available_points = self.wave_points
+        self.list_of_bots_to_spawn = self.sort_bots(self.generate_next_bots_list())
+
     def spawn(self, y, x, bot_type):
         
+        if self.available_points >= self.bot_price_dict[bot_type]:
+            if bot_type == "drone":
+                self.jeu.game_entities_list.append(Drone_Bot(self.jeu, y, x, self.bot_id))
+            elif bot_type == "assault":
+                self.jeu.game_entities_list.append(Assault_Bot(self.jeu, y, x, self.bot_id))
+            elif bot_type == "kamikaze":
+                self.jeu.game_entities_list.append(Kamikaze_Bot(self.jeu, y, x, self.bot_id))
+            elif bot_type == "tank":
+                self.jeu.game_entities_list.append(Tank_Bot(self.jeu, y, x, self.bot_id))
+            elif bot_type == "emp":
+                self.jeu.game_entities_list.append(EMP_Bot(self.jeu, y, x, self.bot_id))
+            elif bot_type == "incinerator":
+                self.jeu.game_entities_list.append(Incinerator_Bot(self.jeu, y, x, self.bot_id))
+            elif bot_type == "ender":
+                self.jeu.game_entities_list.append(Ender_Bot(self.jeu, y, x, self.bot_id))
+            elif bot_type == "stealth":
+                self.jeu.game_entities_list.append(StealthBlack_Bot(self.jeu, y, x, self.bot_id))
+            elif bot_type == "titan":
+                self.jeu.game_entities_list.append(TITAN_Boss(self.jeu, y, x, self.bot_id))
+            else:
+                self.jeu.game_entities_list.append(Basic_Bot(self.jeu, y, x, self.bot_id))
+        
+            self.bot_id += 1
+            self.spawned += 1
+            self.last_spawn = time.time()
+            self.available_points -= self.bot_price_dict[bot_type]
+            print(f"{self.available_points}/{self.wave_points} points | {self.spawned}/{self.bot_quantity} bots")
+            return True
+        
+        else:
+            return False
+    
+    def manual_spawn(self, y, x, bot_type):
         if bot_type == "drone":
             self.jeu.game_entities_list.append(Drone_Bot(self.jeu, y, x, self.bot_id))
         elif bot_type == "assault":
@@ -112,14 +156,71 @@ class Bot_Wave_Spawner:
             self.jeu.game_entities_list.append(TITAN_Boss(self.jeu, y, x, self.bot_id))
         else:
             self.jeu.game_entities_list.append(Basic_Bot(self.jeu, y, x, self.bot_id))
-        
-        self.bot_id += 1
-        self.spawned += 1
-        self.last_spawn = time.time()
-        self.available_points -= self.bot_price_dict[bot_type]
-        
 
+    def generate_next_bots_list(self):
+        bots_to_spawn = []
 
+        # Triez la liste des types de robots en fonction de leur coût, du moins cher au plus cher. uniquement parmi les bots disponibles
+        sorted_bots = sorted((item for item in self.bot_price_dict.items() if item[0] in self.available_bots), key=lambda item: item[1])
+
+        while self.available_points > 0 and self.spawned < self.bot_quantity:
+            # Si c'est le début de la vague, générer un certain nombre de robots "basic" ou "assault".
+            if self.spawned < rd.randint(2, 3):
+                print("bot du début", self.spawned)
+                bot_types = ['basic']
+                bot_type = rd.choices(
+                    population=bot_types,
+                    weights=[self.bot_price_dict[bot] for bot in bot_types if bot in self.bot_price_dict], k=1)[0]
+            else:
+                if self.sub_wave == 1:
+                    self.sub_wave += 1
+
+                # Calculez le nombre maximal de chaque type de robot que vous pouvez vous permettre avec les points disponibles
+                # et le nombre maximal de robots autorisés à apparaître. Stockez ces valeurs dans un dictionnaire.
+                max_bots = {bot[0]: min(self.available_points // bot[1], self.bot_quantity - self.spawned) for bot in sorted_bots}
+
+                # Choisissez un type de robot à apparaître. La probabilité de choisir un type de robot spécifique pourrait être
+                # inversement proportionnelle à son coût (c'est-à-dire que les robots moins chers sont plus susceptibles d'être choisis,
+                # mais il y a toujours une chance que les robots plus chers soient choisis).
+                bot_type = rd.choices(
+                    population=list(max_bots.keys()),
+                    weights=[1 / (self.bot_price_dict[bot] + 1) for bot in max_bots.keys()],
+                    k=1
+                )[0]
+
+            # Si le nombre maximal de ce type de robot n'a pas encore été atteint, déduisez son coût des points disponibles et
+            # incrémentez le nombre de robots apparus.
+            if self.available_points >= self.bot_price_dict[bot_type]:
+                self.available_points -= self.bot_price_dict[bot_type]
+                self.spawned += 1
+                bots_to_spawn.append(bot_type)
+            else:
+                bot_type = min(self.bot_price_dict, key=self.bot_price_dict.get)
+                print(bot_type)
+                if self.available_points < self.bot_price_dict[bot_type]:
+                    break
+        
+        self.available_points = self.wave_points
+        self.spawned = 0
+        # Retournez la liste des types de robots à faire apparaître.
+        return bots_to_spawn
+
+    def sort_bots(self, bots):
+        print(bots)
+        # Calculez la fréquence de chaque type de robot
+        freq = {bot: bots.count(bot) for bot in set(bots)}
+
+        # Créez une nouvelle liste où chaque type de robot est répété un nombre de fois égal à sa fréquence
+        freq_list = [bot for bot in freq for _ in range(freq[bot])]
+
+        # Mélangez cette liste pour obtenir un ordre aléatoire
+        rd.shuffle(freq_list)
+
+        # Utilisez cette liste pour trier notre liste originale de robots
+        bots.sort(key=lambda bot: freq_list.index(bot))
+        print(bots)
+        return bots
+    
 class Bot(pg.sprite.Sprite):
     def __init__(self, jeu, x, y, id, vie, point, degats, vitesse, portee, cadence, name, path, nb_images = 8, coef = (66, 84), flip = True, fps = 90):
         self.jeu = jeu
@@ -214,22 +315,16 @@ class Bot(pg.sprite.Sprite):
 
 class Basic_Bot(Bot):
     def __init__(self, jeu, x, y, id):
-        super().__init__(jeu, x, y, id, vie = 100, point = 50, degats=20, vitesse= 0.08, portee = 0, cadence = 2, path ="enemy/basic_bot_frames/frame_", name="Basic_Bot")
+        super().__init__(jeu, x, y, id, vie = 100, point = 50, degats=20, vitesse= 0.4, portee = 0, cadence = 2, path ="enemy/basic_bot_frames/frame_", name="Basic_Bot")
 
 
 class Assault_Bot(Bot):
     def __init__(self, jeu, x, y, id):
-        super().__init__(jeu, x, y, id, vie = 200, point = 75,degats=25, vitesse= 0.05, portee = 300, cadence = 3, path ="enemy/assault_bot_frames/frame_", name="Assault_Bot")
-        self.bullet_list = []
+        super().__init__(jeu, x, y, id, vie = 200, point = 75,degats=25, vitesse= 0.25, portee = 300, cadence = 3, path ="enemy/assault_bot_frames/frame_", name="Assault_Bot")
     
     def update(self):
-
         self.animation.update()
         self.shoot()
-        for bullet in self.bullet_list:
-            bullet.move()
-            if bullet.is_dead:
-                self.bullet_list.remove(bullet)
     
     def shoot(self):
         if time.time() - self.last_shot >= self.cadence:
@@ -237,8 +332,8 @@ class Assault_Bot(Bot):
                 if isinstance(entity, turret.Turret) and self.rect.colliderect((entity.rect.x + self.portee, entity.rect.y, entity.rect.width, entity.rect.height)):
                     self.last_shot = time.time()
                     bullet = Bullet(self.jeu, self.rect.x, self.rect.y + self.rect.height/2 , self.degats)
-                    self.bullet_list.append(bullet)
-                    self.entity_list.append(bullet)
+                    self.jeu.game_entities_list.append(bullet)
+
 
 class Bullet: 
    
@@ -247,7 +342,7 @@ class Bullet:
         self.entity_list = jeu.game_entities_list
         self.position = [x, y]
         self.degats = degats
-        self.vitesse = 1
+        self.vitesse = 5
         self.name = name
         self.is_dead = False
         # Définir la couleur en RGB
@@ -280,7 +375,7 @@ class Bullet:
 
 class Drone_Bot(Bot):
     def __init__(self, jeu, x, y, id):
-        super().__init__(jeu, x, y, id, vie = 10, point = 150, degats=10, vitesse= 0.25, portee = 0, cadence = 0.6, path ="enemy/drone_bot_frames/frame_", name="Drone_Bot", coef = (66*0.9, 84*0.8), flip= False, fps= 90)
+        super().__init__(jeu, x, y, id, vie = 10, point = 150, degats=10, vitesse= 1.25, portee = 0, cadence = 0.6, path ="enemy/drone_bot_frames/frame_", name="Drone_Bot", coef = (66*0.9, 84*0.8), flip= False, fps= 90)
     
     def move(self):
         self.update()
@@ -332,7 +427,7 @@ class Drone_Bot(Bot):
 
 class Kamikaze_Bot(Bot):
     def __init__(self, jeu, x, y, id):
-        super().__init__(jeu, x, y, id, vie = 50, point = 100,degats=150, vitesse= 0.15, portee = 0, cadence = 0, path ="enemy/kamikaze_bot_frames/frame_", name="Kamikaze_Bot")
+        super().__init__(jeu, x, y, id, vie = 50, point = 100,degats=150, vitesse= 0.75, portee = 0, cadence = 0, path ="enemy/kamikaze_bot_frames/frame_", name="Kamikaze_Bot")
     
     def attack(self, cible):
         if self.rect.colliderect(cible.rect):
@@ -346,7 +441,7 @@ class Kamikaze_Bot(Bot):
 
 class Tank_Bot(Bot):
     def __init__(self, jeu, x, y, id):
-        super().__init__(jeu, x, y, id, vie = 400, point = 250, degats=50, vitesse= 0.03, portee = 0, cadence = 6, coef= (66, 84), path ="enemy/tank_bot/tank_bot_frames/frame_", name="Tank_Bot", fps= 40)
+        super().__init__(jeu, x, y, id, vie = 400, point = 250, degats=50, vitesse= 0.25, portee = 0, cadence = 6, coef= (66, 84), path ="enemy/tank_bot/tank_bot_frames/frame_", name="Tank_Bot", fps= 40)
         self.impact_list = []
     
     def update(self):
@@ -373,7 +468,7 @@ class Tank_Bot(Bot):
 
 class EMP_Bot(Bot):
     def __init__(self, jeu, x, y, id):
-        super().__init__(jeu, x, y, id, vie = 100, point = 150, degats=25, vitesse= 0.12, portee = 0, cadence = 20, path ="enemy/emp_bot_frames/frame_", name="EMP_Bot")
+        super().__init__(jeu, x, y, id, vie = 100, point = 150, degats=25, vitesse= 0.60, portee = 0, cadence = 20, path ="enemy/emp_bot_frames/frame_", name="EMP_Bot")
         self.affected_turret = [] # liste des positions des effets
 
     def update(self):
@@ -408,7 +503,7 @@ class EMP_Bot(Bot):
 
 class Incinerator_Bot(Bot):
     def __init__(self, jeu, x, y, id):
-        super().__init__(jeu, x, y, id, vie = 150, point = 175,degats=0.4, vitesse= 0.08, portee = 210, cadence = 5, path ="enemy/incinerator_bot/unactive_incinerator_bot/frame_", name="Incinerator_Bot")
+        super().__init__(jeu, x, y, id, vie = 150, point = 175,degats=2, vitesse= 0.40, portee = 210, cadence = 5, path ="enemy/incinerator_bot/unactive_incinerator_bot/frame_", name="Incinerator_Bot")
         self.fire_projectile = Fire_Projectile(jeu=self.jeu, tourelle = self, x=self.position[0]+self.rect.width, y=self.position[1]+self.rect.height//2, degats=self.degats)
         self.jeu.game_entities_list.append(self.fire_projectile)
     
@@ -440,7 +535,7 @@ class Incinerator_Bot(Bot):
         return None
 
 class Fire_Projectile:
-    def __init__(self, jeu, tourelle, x, y, degats, vitesse = 1, name="fire_projectile"):
+    def __init__(self, jeu, tourelle, x, y, degats, vitesse = 2, name="fire_projectile"):
         self.jeu = jeu
         self.position = [x, y]
         self.degats = degats
@@ -477,8 +572,8 @@ class Fire_Projectile:
                 self.particles.append([[self.position[0], self.position[1]], [2, rd.randint(0, 10) / 12 - 0.5], rd.randint(6, 9)])
 
                 for particle in self.particles:
-                    particle[0][0] -= particle[1][0]
-                    particle[0][1] += particle[1][1]
+                    particle[0][0] -= particle[1][0] * self.vitesse
+                    particle[0][1] += particle[1][1] * self.vitesse
                     particle[2] -= 0.1
                     pg.draw.circle(fenetre, (255, 255, 25), [int(particle[0][0]), int(particle[0][1])], int(particle[2]))
 
@@ -495,13 +590,25 @@ class Fire_Projectile:
                 
     def move(self):
         if self.state == "active":
+            distance_min = self.rect.width
+            cible = None
             for entity in reversed(self.jeu.game_entities_list):
+
                 if isinstance(entity, turret.Turret):
                     if self.is_colliding(entity):
+                        if cible == None:
+                            cible = entity
+                            distance_min = ((entity.position[0] - self.position[0])**2 + (entity.position[1] - self.position[1])**2)**0.5
+
                         distance = ((entity.position[0] - self.position[0])**2 + (entity.position[1] - self.position[1])**2)**0.5
-                        degat =  max(0, (self.tourelle.portee - distance) / self.tourelle.portee) * self.degats  # Les dégâts augmentent lorsque l'ennemi se rapproche
-                        self.cible_x = entity.position[0]
-                        return entity.get_damage(degat)
+                        
+                        if distance < distance_min:
+                            distance_min = distance
+                            cible = entity
+            if cible != None:
+                degat =  max(0, (self.tourelle.portee - distance_min) / self.tourelle.portee) * self.degats  # Les dégâts augmentent lorsque l'ennemi se rapproche
+                self.cible_x = cible.position[0]
+                return cible.get_damage(degat)
 
             if self.position[0] < 0:  # Check if the projectile has passed the left edge of the window
                 self.is_dead = True   
@@ -514,7 +621,7 @@ class Fire_Projectile:
 
 class Ender_Bot(Bot):
     def __init__(self, jeu, x, y, id):
-        super().__init__(jeu, x, y, id, vie = 180, point = 200,degats=80, vitesse= 0.1, portee = 10, cadence = 2.5, path ="enemy/ender_bot_frames/frame_", name="Ender_Bot", fps= 60)
+        super().__init__(jeu, x, y, id, vie = 180, point = 200,degats=70, vitesse= 0.5, portee = 10, cadence = 2.5, path ="enemy/ender_bot_frames/frame_", name="Ender_Bot", fps= 60)
         self.special_ability_cooldown = 5
         self.last_ability_use = time.time() - self.special_ability_cooldown  # The last time the special ability was used
         self.ability_state = "unactive"
@@ -563,7 +670,7 @@ class Ender_Bot(Bot):
         else:
             return super().move()
     
-    def get_damage(self, degats):
+    def get_damage(self, degats, source=None):
         if self.vie - degats >= 0:
             self.special_ability()
         return super().get_damage(degats)
@@ -571,7 +678,7 @@ class Ender_Bot(Bot):
 
 class StealthBlack_Bot(Bot):
     def __init__(self, jeu, x, y, id):
-        super().__init__(jeu, x, y, id, vie = 200, point = 225, degats=50, vitesse= 0.15, portee = 0, cadence = 5, path ="enemy/stealth_black_bot_frames/frame_", name="StealthBlack_Bot")
+        super().__init__(jeu, x, y, id, vie = 200, point = 225, degats=70, vitesse= 0.75, portee = 0, cadence = 5, path ="enemy/stealth_black_bot_frames/frame_", name="StealthBlack_Bot")
         self.animation.entity = self
         self.stealth = True
         self.stealth_cooldown = 5
@@ -588,7 +695,7 @@ class StealthBlack_Bot(Bot):
         self.stealth = False
         return super().attack(cible)
 
-    def get_damage(self, degats):
+    def get_damage(self, degats, source=None):
         if self.stealth:
             return False
         return super().get_damage(degats)
@@ -596,7 +703,7 @@ class StealthBlack_Bot(Bot):
 
 class TITAN_Boss(Bot):
     def __init__(self, jeu, x, y, id):
-        super().__init__(jeu, x, y, id, vie = 2500, point = 2500,degats=0, vitesse= 0.05, portee = 0, cadence = 5, path ="enemy/titan/titan_moving_frames/frame_", nb_images=4, coef = (160*5, 96*5), name="TITAN_Boss", fps= 45)
+        super().__init__(jeu, x, y, id, vie = 2500, point = 2500,degats=0, vitesse= 0.25, portee = 0, cadence = 5, path ="enemy/titan/titan_moving_frames/frame_", nb_images=4, coef = (160*5, 96*5), name="TITAN_Boss", fps= 45)
 
         self.state_list = ["moving", "standing" , "attack_1", "attack_2",
                            "shield", "death_beam", "damaged", "death"]

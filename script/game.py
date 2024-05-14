@@ -13,7 +13,7 @@ class Game:
         pg.init()
         
         # Définir les FPS (images par seconde)
-        self.fps = 90
+        self.fps = 75
         self.clock = pg.time.Clock()
 
         # Charger l'image du fond d'écran
@@ -96,11 +96,11 @@ class Game:
         self.bot_wave_spawner = enemy.Bot_Wave_Spawner(jeu=self)
         
         #test et placement des éléments    
-        [[self.game_entities_list.append(turret.Turret_selection(self ,self.matrice_tourelle[j][i][1], self.matrice_tourelle[j][i][0], "Omni Turret")) for i in range(0,8)] for j in range(0,5)]
+        #[[self.game_entities_list.append(turret.Turret_selection(self ,self.matrice_tourelle[j][i][1], self.matrice_tourelle[j][i][0], "Omni Turret")) for i in range(0,8)] for j in range(0,5)]
     
         self.game_entities_list.append(turret.Turret_selection(self ,self.matrice_tourelle[2][1][1], self.matrice_tourelle[2][1][0], "BlackHole Turret"))
         
-        #self.bot_wave_spawner.spawn(self.matrice_bot[3][1][1], self.matrice_bot[2][1][0], "basic")
+        self.bot_wave_spawner.manual_spawn(self.matrice_bot[3][1][1], self.matrice_bot[2][1][0], "stealth")
         
         self.debug_bot_timer = None
         #self.debug_bot_timer = time.time()
@@ -109,6 +109,10 @@ class Game:
         # Boucle principale du jeu
         running = True
         while running:
+            
+            # Limiter le nombre d'images par seconde
+            self.clock.tick(self.fps)
+            #print(self.clock.get_fps())
             # Gestion des événements
             for event in pg.event.get():
                 
@@ -157,7 +161,7 @@ class Game:
                                             self.game_entities_list.remove(entity)
                                             break
                         
-                            elif self.mouse_selection[0] == "next_wave_button" and self.wave_ended:
+                            elif self.wave_ended and self.mouse_selection[0] == "next_wave_button":
                                 self.wave_ended = False
                                 self.wave += 1
                                 
@@ -189,20 +193,19 @@ class Game:
             
             self.kama_loot()
                       
-            # Réapparition manuel d'un bot pour débuger la tourelle BlackHole
+            # Réapparition manuel chronométré d'un bot pour débuggage et test
             #---------------------------------------------
             if self.debug_bot_timer is not None:
                 if time.time() - self.debug_bot_timer >= 0 :
                     self.bot_wave_spawner.spawn(self.matrice_bot[2][1][1], self.matrice_bot[2][0][0], "kamikaze")
                     self.debug_bot_timer = None
             #---------------------------------------------
-            
-            cond = True
+
             for entity in self.game_entities_list:
                 if entity.is_dead:
                     if isinstance(entity, enemy.Bot):
                         self.kama_loot(entity)
-                        cond = False
+                    
                     self.game_entities_list.remove(entity)
                     
                 else:
@@ -211,7 +214,7 @@ class Game:
                         if projectile is not None:
                             self.game_entities_list.append(projectile)
                             
-                    elif isinstance(entity, turret.Projectile):
+                    elif isinstance(entity, turret.Projectile) or isinstance(entity, enemy.Bullet):
                         entity.move()
                         
                                     
@@ -220,11 +223,10 @@ class Game:
 
                     elif isinstance(entity, others.Animation):
                         entity.update()
-                        
-            if not self.wave_ended and cond:
-                if self.bot_wave_spawner.update() == 3:
-                    self.wave_ended = True
-
+                    
+            if not self.wave_ended:
+                self.bot_wave_spawner.update()
+                    
     def render_debug(self):
         for i in range(5):
             for j in range(10):
