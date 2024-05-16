@@ -9,17 +9,18 @@ from abc import ABC, abstractmethod
 from pygame import BLEND_RGB_ADD
 import math
 
+import matplotlib.pyplot as plt
+
 class Bot_Wave_Spawner:
     def __init__(self, jeu):
         self.jeu = jeu
         self.spawned = 0
         self.bot_id = 0
-        self.spawn_rate = 3
+        self.spawn_rate = 8
         self.bot_quantity = 10
         self.last_spawn = 0
-        self.next_spawn_time = self.last_spawn + self.spawn_rate
         
-        self.bot_price_dict = {"basic" : 50, "assault" : 75,  "drone" : 50, "kamikaze" : 125, "tank" : 175, "emp" : 200, "incinerator" : 200, "ender" : 250, "stealth" : 250}
+        self.bot_price_dict = {"basic" : 50, "assault" : 75,  "drone" : 100, "kamikaze" : 125, "tank" : 175, "emp" : 200, "incinerator" : 200, "ender" : 250, "stealth" : 250, "titan" : 0}
         
         self.wave_points = 500
         self.available_points = 500
@@ -29,14 +30,17 @@ class Bot_Wave_Spawner:
         
         self.sub_wave = 1 # total of 3 subwaves per wave. 1 = beetween 2 and 3 bots, 2 = 1/3 of the total bots minus those of subwave 1, 3 = 2/3 of the total bots
         
+        self.boss_wave = 10
+        
+        self.first_sub_wave_rd = rd.randint(2, 3)
+        
         self.list_of_bots_to_spawn = self.sort_bots(self.generate_next_bots_list())
 
-        
     def update(self):
         
         if not self.jeu.wave_ended:
-
-            if self.spawned >= self.bot_quantity or self.available_points <= self.bot_price_dict["basic"]:
+            print(self.jeu.wave == self.boss_wave and self.spawned >= 1 )            
+            if self.spawned >= self.bot_quantity or self.available_points <= self.bot_price_dict["basic"] or (self.jeu.wave == self.boss_wave and self.spawned >= 1):
                 cond = True
                 for bot in self.jeu.game_entities_list:
                     if isinstance(bot, Bot):
@@ -44,19 +48,23 @@ class Bot_Wave_Spawner:
                         break
                 if cond:
                     self.end_of_wave()
-                return 3
+                    return 3
             
-            self.next_spawn()
-            if time.time() >= self.next_spawn_time:
-
-                # Choisissez une coordonnée aléatoire dans la ligne
-                x, y = rd.randint(0,len(self.jeu.matrice_bot)-1), rd.randint(0,len(self.jeu.matrice_bot[0])-1)
-                x, y = self.jeu.matrice_bot[x][y]
-                
+            if self.boss_wave == self.jeu.wave and self.spawned == 0:
+                    self.boss_spawn()
+                    return 4
+            
+            elif self.next_spawn() and not self.boss_wave == self.jeu.wave:
                 if self.list_of_bots_to_spawn:
-                    self.spawn(y, x, self.list_of_bots_to_spawn.pop(0))
+                    
+                    # Choisissez une coordonnée aléatoire dans la ligne
+                    x, y = rd.randint(0,len(self.jeu.matrice_bot)-1), rd.randint(0,len(self.jeu.matrice_bot[0])-1)
+                    x, y = self.jeu.matrice_bot[x][y]
                 
-                return True
+                    self.spawn(y, x, self.list_of_bots_to_spawn.pop(0))
+                    
+                    #self.end_of_wave()
+                    return 1
 
             else:
                 return 2
@@ -64,25 +72,68 @@ class Bot_Wave_Spawner:
             return False
     
     def next_spawn(self):
+        print(self.sub_wave_cut, self.spawned, self.sub_wave, " | S.R : ", self.spawn_rate)
         if self.spawned < self.bot_quantity:
-            self.next_spawn_time= self.last_spawn + self.spawn_rate
-            
             nb_bot = 0
             for bot in self.jeu.game_entities_list:
                 if isinstance(bot, Bot):
                     nb_bot += 1
+                    
+            if time.time() - self.last_spawn >= self.spawn_rate:
+                #print("still executing")
                 
-            if nb_bot == 0:
-                self.next_spawn_time = time.time()
-            
+                # Permet de passer à la sous-vague suivante
+                if self.sub_wave == 1:
+                    if nb_bot >= 1:
+                        return False
+                    
+                    elif self.spawned >= self.sub_wave_cut[0] and nb_bot == 0:
+                        self.sub_wave = 2
+                        self.spawn_rate -= 0.5
+                        
+                elif self.sub_wave == 2:
+                    if nb_bot >= 2 or (self.spawned >= self.sub_wave_cut[1] and nb_bot > 0):
+                        return False
+                    
 
+                    if self.spawned >= self.sub_wave_cut[1] and nb_bot == 0:
+                        self.sub_wave = 3
+                        self.spawn_rate -= 0.5
+                        
+                return True
 
+                
+            # Permet d'ajouter des bots si il y en a trop peu
+            cond = False
+                
+            if self.sub_wave == 2:
+                if nb_bot < 4 and self.spawned < self.sub_wave_cut[1]:
+                    cond = True
+                
+                if self.spawned >= self.sub_wave_cut[1] and nb_bot > 0:
+                        return False
+
+            if self.sub_wave == 3:
+                if nb_bot < 5:
+                    cond = True
+            #print("still executing 2")
+
+            return cond
+        #print("still executing 3")
+        return False
+
+    def boss_spawn(self):
+        self.spawn(self.jeu.matrice_bot[1][1][1], self.jeu.matrice_bot[1][1][0], "titan")
+        self.spawned += 1
 
     def end_of_wave(self):
         self.jeu.wave_ended = True
         self.spawned = 0
+        self.sub_wave = 1
+        self.spawn_rate = 8
+        
         if self.jeu.wave <= 3:
-            self.bot_quantity += 5
+            self.bot_quantity += 3
             self.wave_points += 300
             
         elif self.jeu.wave <= 6:
@@ -90,11 +141,13 @@ class Bot_Wave_Spawner:
             self.wave_points += 1000
             
         elif self.jeu.wave <= 9:
-            self.bot_quantity += 3
+            self.bot_quantity += 5
             self.wave_points += 1500
                       
-        if self.spawn_rate > 1:
-            self.spawn_rate -= 0.25
+        
+        self.spawn_rate -= self.jeu.wave*0.5
+        if self.spawn_rate < 4: self.spawn_rate = 4
+            
         if self.bots_to_unlock:
             self.available_bots.append(self.bots_to_unlock.pop())
         
@@ -128,13 +181,16 @@ class Bot_Wave_Spawner:
             self.bot_id += 1
             self.spawned += 1
             self.last_spawn = time.time()
-            self.available_points -= self.bot_price_dict[bot_type]
-            print(f"{self.available_points}/{self.wave_points} points | {self.spawned}/{self.bot_quantity} bots")
+            if bot_type != "titan": self.available_points -= self.bot_price_dict[bot_type]
+            #print(self.list_of_bots_to_spawn)
+            print(f"subwave : {self.sub_wave} | {self.spawned} / {self.bot_quantity} bots spawned")
             return True
         
         else:
+            #print(self.list_of_bots_to_spawn)
+            print(f"subwave : {self.sub_wave} | {self.spawned} / {self.bot_quantity} bots spawned")
             return False
-    
+        
     def manual_spawn(self, y, x, bot_type):
         if bot_type == "drone":
             self.jeu.game_entities_list.append(Drone_Bot(self.jeu, y, x, self.bot_id))
@@ -159,21 +215,17 @@ class Bot_Wave_Spawner:
 
     def generate_next_bots_list(self):
         bots_to_spawn = []
-
         # Triez la liste des types de robots en fonction de leur coût, du moins cher au plus cher. uniquement parmi les bots disponibles
         sorted_bots = sorted((item for item in self.bot_price_dict.items() if item[0] in self.available_bots), key=lambda item: item[1])
 
         while self.available_points > 0 and self.spawned < self.bot_quantity:
             # Si c'est le début de la vague, générer un certain nombre de robots "basic" ou "assault".
-            if self.spawned < rd.randint(2, 3):
-                print("bot du début", self.spawned)
+            if self.spawned < self.first_sub_wave_rd:
                 bot_types = ['basic']
                 bot_type = rd.choices(
                     population=bot_types,
                     weights=[self.bot_price_dict[bot] for bot in bot_types if bot in self.bot_price_dict], k=1)[0]
             else:
-                if self.sub_wave == 1:
-                    self.sub_wave += 1
 
                 # Calculez le nombre maximal de chaque type de robot que vous pouvez vous permettre avec les points disponibles
                 # et le nombre maximal de robots autorisés à apparaître. Stockez ces valeurs dans un dictionnaire.
@@ -184,7 +236,7 @@ class Bot_Wave_Spawner:
                 # mais il y a toujours une chance que les robots plus chers soient choisis).
                 bot_type = rd.choices(
                     population=list(max_bots.keys()),
-                    weights=[1 / (self.bot_price_dict[bot] + 1) for bot in max_bots.keys()],
+                    weights=[(self.bot_price_dict[bot] + self.jeu.wave) / (self.bot_price_dict[bot] + 1) for bot in max_bots.keys()],
                     k=1
                 )[0]
 
@@ -195,32 +247,83 @@ class Bot_Wave_Spawner:
                 self.spawned += 1
                 bots_to_spawn.append(bot_type)
             else:
-                bot_type = min(self.bot_price_dict, key=self.bot_price_dict.get)
-                print(bot_type)
-                if self.available_points < self.bot_price_dict[bot_type]:
+                affordable_bots = [bot for bot in self.available_bots if self.bot_price_dict[bot] <= self.available_points]
+                if affordable_bots:
+                    bot_type = max(affordable_bots, key=self.bot_price_dict.get)
+                    self.available_points -= self.bot_price_dict[bot_type]
+                    self.spawned += 1
+                    bots_to_spawn.append(bot_type)
+                else:
                     break
+                    
         
         self.available_points = self.wave_points
         self.spawned = 0
+        
+        self.sub_wave_cut = [self.first_sub_wave_rd, len(bots_to_spawn)//2, len(bots_to_spawn)]
+        #print(len(bots_to_spawn), self.sub_wave_cut)
+        
+        
+        
         # Retournez la liste des types de robots à faire apparaître.
         return bots_to_spawn
 
+
     def sort_bots(self, bots):
-        print(bots)
+        bot_depart = [self.get_index(bot) for bot in bots]
         # Calculez la fréquence de chaque type de robot
-        freq = {bot: bots.count(bot) for bot in set(bots)}
+        probas = {bot : (self.get_index(bot)) / (len(self.bot_price_dict)) for bot in bots}
+        for i in range(len(bots)):
+            min_idx = i
+            for j in range(i+1, len(bots)):
+                nb = rd.randint(0, len(self.bot_price_dict)-1)/10
+                if probas[bots[min_idx]] > nb:
+                    min_idx = j
+            bots[i], bots[min_idx] = bots[min_idx], bots[i]
+            
+        bot_intermediaire = [self.get_index(bot) for bot in bots]
+        # Déplacez les bots avec l'index le plus élevé vers la droite au moins une fois
+        sorted_indexes = sorted(self.get_index(bot) for bot in bots)
+        top_tier_index = sorted_indexes[int(len(sorted_indexes) * 2 / 3)]  # L'index qui représente le début du tiers supérieur
+        for _ in range(bots.count(self.available_bots[top_tier_index])):  # Répétez pour chaque bot avec un index dans le tiers supérieur
+            nb_decalage = rd.randint(1, (len(bots)-1))
+            for i in range(len(bots) - 1):  # -1 pour éviter de dépasser la fin de la liste
+                if self.get_index(bots[i]) >= top_tier_index:
+                    bots[i], bots[i+1] = bots[i+1], bots[i]
+                    nb_decalage -= 1
+                    if nb_decalage == 0:
+                        break
 
-        # Créez une nouvelle liste où chaque type de robot est répété un nombre de fois égal à sa fréquence
-        freq_list = [bot for bot in freq for _ in range(freq[bot])]
-
-        # Mélangez cette liste pour obtenir un ordre aléatoire
-        rd.shuffle(freq_list)
-
-        # Utilisez cette liste pour trier notre liste originale de robots
-        bots.sort(key=lambda bot: freq_list.index(bot))
-        print(bots)
+        bot_trie = [self.get_index(bot) for bot in bots]
+        
+        #self.draw_graph(bot_depart,bot_intermediaire, bot_trie)
         return bots
     
+    def get_index(self, bot_type):
+        keys_list = list(self.bot_price_dict.keys())
+        return keys_list.index(bot_type)
+    
+    def draw_graph(self, bots_depart, bot_intermediaire ,bot_trie):
+        plt.figure()
+    
+        # Créer le graphique du haut
+        plt.subplot(3, 1, 1)  # 2 lignes, 1 colonne, graphique n°1
+        plt.bar(range(len(bots_depart)), bots_depart)
+        plt.title('Bots Depart')
+
+        # Créer le graphique du milieu
+        plt.subplot(3, 1, 2)  # 2 lignes, 1 colonne, graphique n°1
+        plt.bar(range(len(bot_intermediaire)), bot_intermediaire)
+        plt.title('Bots inter')
+        
+        # Créer le graphique du bas
+        plt.subplot(3, 1, 3)  # 2 lignes, 1 colonne, graphique n°2
+        plt.bar(range(len(bot_trie)), bot_trie)
+        plt.title('Bot Trie')
+    
+        # Afficher le graphique
+        plt.show()
+
 class Bot(pg.sprite.Sprite):
     def __init__(self, jeu, x, y, id, vie, point, degats, vitesse, portee, cadence, name, path, nb_images = 8, coef = (66, 84), flip = True, fps = 90):
         self.jeu = jeu
@@ -300,17 +403,17 @@ class Bot(pg.sprite.Sprite):
         # Calcul du pourcentage de vie
         pourcentage_vie = self.vie / self.vie_max  # Utilisez la vie maximale de la tourelle pour calculer le pourcentage de vie
 
-        # Calcul de la largeur de la barre verte en fonction du pourcentage de vie
-        largeur_barre_verte = round(self.rect.width * pourcentage_vie)
+        # Calcul de la largeur de la bbotse verte en fonction du pourcentage de vie
+        largeur_bbotse_verte = round(self.rect.width * pourcentage_vie)
 
-        # Calcul de la position de départ de la barre rouge
-        position_barre_rouge = (self.rect.x + largeur_barre_verte, self.rect.y)
+        # Calcul de la position de départ de la bbotse rouge
+        position_bbotse_rouge = (self.rect.x + largeur_bbotse_verte, self.rect.y)
 
-        # Dessin de la barre verte
-        pg.draw.rect(fenetre, (0, 255, 0), (self.rect.x, self.rect.y, largeur_barre_verte, 5))  # Utilisez la largeur de la barre verte pour le troisième argument
+        # Dessin de la bbotse verte
+        pg.draw.rect(fenetre, (0, 255, 0), (self.rect.x, self.rect.y, largeur_bbotse_verte, 5))  # Utilisez la largeur de la bbotse verte pour le troisième argument
 
-        # Dessin de la barre rouge
-        pg.draw.rect(fenetre, (255, 0, 0), (position_barre_rouge[0], position_barre_rouge[1], self.rect.width - largeur_barre_verte, 5))
+        # Dessin de la bbotse rouge
+        pg.draw.rect(fenetre, (255, 0, 0), (position_bbotse_rouge[0], position_bbotse_rouge[1], self.rect.width - largeur_bbotse_verte, 5))
 
 
 class Basic_Bot(Bot):
@@ -413,17 +516,17 @@ class Drone_Bot(Bot):
         # Calcul du pourcentage de vie
         pourcentage_vie = self.vie / self.vie_max  # Utilisez la vie maximale de la tourelle pour calculer le pourcentage de vie
 
-        # Calcul de la largeur de la barre verte en fonction du pourcentage de vie
-        largeur_barre_verte = round(self.rect.width * pourcentage_vie)
+        # Calcul de la largeur de la bbotse verte en fonction du pourcentage de vie
+        largeur_bbotse_verte = round(self.rect.width * pourcentage_vie)
 
-        # Calcul de la position de départ de la barre rouge
-        position_barre_rouge = (self.rect.x + largeur_barre_verte, self.rect.y)
+        # Calcul de la position de départ de la bbotse rouge
+        position_bbotse_rouge = (self.rect.x + largeur_bbotse_verte, self.rect.y)
 
-        # Dessin de la barre verte
-        pg.draw.rect(fenetre, (0, 255, 0), (self.rect.x, self.rect.y-35, largeur_barre_verte, 5))  # Utilisez la largeur de la barre verte pour le troisième argument
+        # Dessin de la bbotse verte
+        pg.draw.rect(fenetre, (0, 255, 0), (self.rect.x, self.rect.y-35, largeur_bbotse_verte, 5))  # Utilisez la largeur de la bbotse verte pour le troisième argument
 
-        # Dessin de la barre rouge
-        pg.draw.rect(fenetre, (255, 0, 0), (position_barre_rouge[0], position_barre_rouge[1]-35, self.rect.width - largeur_barre_verte, 5))
+        # Dessin de la bbotse rouge
+        pg.draw.rect(fenetre, (255, 0, 0), (position_bbotse_rouge[0], position_bbotse_rouge[1]-35, self.rect.width - largeur_bbotse_verte, 5))
 
 class Kamikaze_Bot(Bot):
     def __init__(self, jeu, x, y, id):
@@ -703,7 +806,7 @@ class StealthBlack_Bot(Bot):
 
 class TITAN_Boss(Bot):
     def __init__(self, jeu, x, y, id):
-        super().__init__(jeu, x, y, id, vie = 2500, point = 2500,degats=0, vitesse= 0.25, portee = 0, cadence = 5, path ="enemy/titan/titan_moving_frames/frame_", nb_images=4, coef = (160*5, 96*5), name="TITAN_Boss", fps= 45)
+        super().__init__(jeu, x, y, id, vie = 100, point = 2500,degats=0, vitesse= 0.25, portee = 0, cadence = 5, path ="enemy/titan/titan_moving_frames/frame_", nb_images=4, coef = (160*5, 96*5), name="TITAN_Boss", fps= 45)
 
         self.state_list = ["moving", "standing" , "attack_1", "attack_2",
                            "shield", "death_beam", "damaged", "death"]
@@ -747,7 +850,8 @@ class TITAN_Boss(Bot):
             pass
         
         elif self.collision_detection() or self.collision_detection_infront():
-            self.state = self.state_list[0]
+            if self.vie > 0:
+                self.state = self.state_list[0]
             
         elif self.phase == 0: self.phase_0()
                 
@@ -943,7 +1047,7 @@ class TITAN_Boss(Bot):
             
             if target_list:
                 target = rd.choice(target_list)
-                bullet = TITAN_Basic_Projectile(self.jeu, self.position[0] + self.rect.width//2, self.position[1] + self.rect.height//2, 25, 1.5, target, "titan_basic_projectile")
+                bullet = TITAN_Basic_Projectile(self.jeu, self.position[0] + self.rect.width//2, self.position[1] + self.rect.height//2, 25, 7.5, target, "titan_basic_projectile")
                 self.entity_list.append(bullet)
                 self.jeu.game_entities_list.append(bullet)
                 self.projectile_list.append(bullet)
@@ -958,13 +1062,13 @@ class TITAN_Boss(Bot):
             
             if target_list:
                 target = rd.choice(target_list)
-                bullet = TITAN_Missile(self.jeu, self.position[0] + self.rect.width//2, self.position[1] + self.rect.height//2, 100, 1, target, "titan_basic_projectile")
+                bullet = TITAN_Missile(self.jeu, self.position[0] + self.rect.width//2, self.position[1] + self.rect.height//2, 100, 5, target, "titan_basic_projectile")
                 self.entity_list.append(bullet)
                 self.jeu.game_entities_list.append(bullet)
                 self.projectile_list.append(bullet)
 
     def death_beam(self):
-        if time.time() - self.state_start >= 5:
+        if time.time() - self.state_start >= 3:
             if self.death_beam_projectile == None:
                 self.death_beam_projectile = TITAN_Death_Beam(self)
             else:
@@ -982,7 +1086,7 @@ class TITAN_Boss(Bot):
             self.jeu.is_game_over = True
             self.is_dead = True
 
-    def get_damage(self, degats):
+    def get_damage(self, degats, source=None):
         if self.state == self.state_list[4] or self.state == self.state_list[6] or self.state == self.state_list[7]:
             return 
         
@@ -1014,6 +1118,7 @@ class TITAN_Boss(Bot):
                     cond = False
                     break
         return cond
+    
     def is_colliding(self, cible):
         if self.rect.colliderect(cible.rect):
             return True
@@ -1042,17 +1147,17 @@ class TITAN_Boss(Bot):
         # Calcul du pourcentage de vie
         pourcentage_vie = self.vie / self.vie_max  # Utilisez la vie maximale de la tourelle pour calculer le pourcentage de vie
 
-        # Calcul de la largeur de la barre verte en fonction du pourcentage de vie
-        largeur_barre_verte = round(self.rect.width * pourcentage_vie)
+        # Calcul de la largeur de la bbotse verte en fonction du pourcentage de vie
+        largeur_bbotse_verte = round(self.rect.width * pourcentage_vie)
 
-        # Calcul de la position de départ de la barre rouge
-        position_barre_rouge = (self.rect.x + largeur_barre_verte, self.rect.y)
+        # Calcul de la position de départ de la bbotse rouge
+        position_bbotse_rouge = (self.rect.x + largeur_bbotse_verte, self.rect.y)
 
-        # Dessin de la barre verte
-        pg.draw.rect(fenetre, (0, 255, 0), (self.rect.x, self.rect.y, largeur_barre_verte, 5))  # Utilisez la largeur de la barre verte pour le troisième argument
+        # Dessin de la bbotse verte
+        pg.draw.rect(fenetre, (0, 255, 0), (self.rect.x, self.rect.y, largeur_bbotse_verte, 5))  # Utilisez la largeur de la bbotse verte pour le troisième argument
 
-        # Dessin de la barre rouge
-        pg.draw.rect(fenetre, (255, 0, 0), (position_barre_rouge[0], position_barre_rouge[1], self.rect.width - largeur_barre_verte, 5))
+        # Dessin de la bbotse rouge
+        pg.draw.rect(fenetre, (255, 0, 0), (position_bbotse_rouge[0], position_bbotse_rouge[1], self.rect.width - largeur_bbotse_verte, 5))
 
 class Projectile:
     def __init__(self, jeu, x, y, degats, vitesse, name):

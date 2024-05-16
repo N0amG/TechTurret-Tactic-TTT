@@ -555,7 +555,7 @@ class Shield(Turret):
                 
 class Omni_Turret(Turret):
         def __init__(self, jeu, x, y):
-            super().__init__(jeu, x, y, vie = 200, degats= 10, portee="inf", cadence=1, prix=450, name = "Tourelle_Omni")
+            super().__init__(jeu, x, y, vie = 200, degats= 5, portee="inf", cadence=1, prix=450, name = "Tourelle_Omni")
             self.image = pg.image.load("assets/images/turrets/omni_turret.png").convert_alpha()
             self.image = pg.transform.scale(self.image, (75, 100))
             self.position[0] = (self.position[0] - self.image.get_width()// 2) 

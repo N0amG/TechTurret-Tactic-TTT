@@ -2,27 +2,27 @@ TechTurret Tactic - TTT
 
 ---------------
 
-Version 0.6.2
+Version 0.7
 
 
     - nouveauté :
-        - le jeu est limité à 75 fps pour plus de stabilité
-        
-        - développement du système de vague encore en cours
+
+        - Système de vague fonctionnel.
+        - Combat de boss a la 10eme vague
+        - Victoire de la partie a la défaite du boss
+
 ----------------
 
     - amélioration :
         - buff :
-            - dégats des omni tourelles x2
-            - les trou noir inflige des dégats au drones;
-            - les projectiles du bot assault persiste apres sa mort
+            TITAN : life : 2500 -> 5000
+        - nerf :
+            Omni Turret : damage : 10 -> 5
         
 ----------------
 
     - fix de bug :
-        - barre de vie des drones a la mauvaise hauteur;
-        - ordre d'attaque des tourelles plasma et incinerator défectueux;
-        - si un bot assualt mourrait, l'image des projectiles restait figé sur l'écran;
+        Speed of TITAN projectiles
 
 ----------------
 

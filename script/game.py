@@ -76,7 +76,7 @@ class Game:
         
         # Mise en place du shop
         # Kama = monnaie du jeu
-        self.kamas = 5_000_000_000
+        self.kamas = 300_000 # start a 300 ?
         self.last_kama_time = time.time()
         self.kama_image = pg.image.load("assets/images/others/kama.png")
         
@@ -96,11 +96,11 @@ class Game:
         self.bot_wave_spawner = enemy.Bot_Wave_Spawner(jeu=self)
         
         #test et placement des éléments    
-        #[[self.game_entities_list.append(turret.Turret_selection(self ,self.matrice_tourelle[j][i][1], self.matrice_tourelle[j][i][0], "Omni Turret")) for i in range(0,8)] for j in range(0,5)]
-    
-        self.game_entities_list.append(turret.Turret_selection(self ,self.matrice_tourelle[2][1][1], self.matrice_tourelle[2][1][0], "BlackHole Turret"))
+        [[self.game_entities_list.append(turret.Turret_selection(self ,self.matrice_tourelle[j][i][1], self.matrice_tourelle[j][i][0], "Omni Turret")) for i in range(0,8)] for j in range(0,5)]
+        #[[self.game_entities_list.append(turret.Turret_selection(self ,self.matrice_tourelle[j][i][1], self.matrice_tourelle[j][i][0], "Plasma Turret")) for i in range(0,2)] for j in range(0,5)]
+        #self.game_entities_list.append(turret.Turret_selection(self ,self.matrice_tourelle[2][1][1], self.matrice_tourelle[2][1][0], "BlackHole Turret"))
         
-        self.bot_wave_spawner.manual_spawn(self.matrice_bot[3][1][1], self.matrice_bot[2][1][0], "stealth")
+        #self.bot_wave_spawner.manual_spawn(self.matrice_bot[1][1][1], self.matrice_bot[1][1][0], "titan")
         
         self.debug_bot_timer = None
         #self.debug_bot_timer = time.time()
@@ -189,7 +189,7 @@ class Game:
         pg.quit()
 
     def update(self):
-        if not self.is_game_over:
+        if not self.is_game_over and not self.paused:
             
             self.kama_loot()
                       
@@ -226,6 +226,11 @@ class Game:
                     
             if not self.wave_ended:
                 self.bot_wave_spawner.update()
+            
+            else:
+                if self.bot_wave_spawner.boss_wave == self.wave:
+                    self.is_player_win = True
+                    self.is_game_over = True
                     
     def render_debug(self):
         for i in range(5):
@@ -256,6 +261,12 @@ class Game:
         text_rect = text.get_rect(center=(self.taille_fenetre[0] // 2, self.taille_fenetre[1] // 2 - 150))
         self.fenetre.blit(text, text_rect)
 
+    def render_game_win(self):
+        font = pg.font.Font(None, 100)
+        text = font.render("Win !!!", True, (0, 255, 0))
+        text_rect = text.get_rect(center=(self.taille_fenetre[0] // 2, self.taille_fenetre[1] // 2 - 150))
+        self.fenetre.blit(text, text_rect)
+        
     def render_pause(self):
         font = pg.font.Font(None, 100)
         text = font.render("Pause", True, (255, 255, 255))
@@ -367,7 +378,10 @@ class Game:
         
         # Affichage du "Game Over"
         if self.is_game_over:
-            self.render_game_over()
+            if self.is_player_win:
+                self.render_game_win()
+            else:
+                self.render_game_over()
 
             
         else:
@@ -384,7 +398,7 @@ class Game:
                 if not entity.is_dead and isinstance(entity, enemy.Bot):
                     cond = False
 
-            if self.wave_ended and cond:
+            if self.wave_ended and cond and not self.is_player_win:
                 self.next_wave_button_render()
             
         if self.paused:
