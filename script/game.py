@@ -43,7 +43,8 @@ class Game:
         decalage_x = 160
         decalage_y = 295 + self.largeur_interface
         
-        self.liste_tourelle = [("Turret", 100), ("Laser Turret", 200), ("Shield", 250), ("Plasma Turret",350), ("Omni Turret", 450), ("BlackHole Turret", 500),] #("AntiMatter Turret", 750)
+        self.liste_tourelle = [("Basic Turret", 100), ("Laser Turret", 200), ("Shield", 250), ("Plasma Turret",350), ("Omni Turret", 450), ("BlackHole Turret", 500),] #("AntiMatter Turret", 750)
+        self.liste_tourelle_image = [pg.transform.scale(pg.image.load(f"assets/images/turrets/{tourelle[0].lower().replace(' ', '_')}.png"), (75, 100)).convert_alpha() for tourelle in self.liste_tourelle]
         
         self.paused = False
         
@@ -69,9 +70,9 @@ class Game:
         self.is_game_over = False
         self.is_player_win = False
         
-        # Tracking de la souris
-        self.previous_mouse_selection = None
-        self.mouse_selection = None
+        
+        # gestion de la souris
+        self.mouse_manager = others.MouseManager(jeu=self)
         
         
         # Mise en place du shop
@@ -94,13 +95,13 @@ class Game:
         
         self.wave_ended = False
         self.bot_wave_spawner = enemy.Bot_Wave_Spawner(jeu=self)
-        
+                
         #test et placement des éléments    
-        [[self.game_entities_list.append(turret.Turret_selection(self ,self.matrice_tourelle[j][i][1], self.matrice_tourelle[j][i][0], "Omni Turret")) for i in range(0,8)] for j in range(0,5)]
+        #[[self.game_entities_list.append(turret.Turret_selection(self ,self.matrice_tourelle[j][i][1], self.matrice_tourelle[j][i][0], "Omni Turret")) for i in range(0,8)] for j in range(0,5)]
         #[[self.game_entities_list.append(turret.Turret_selection(self ,self.matrice_tourelle[j][i][1], self.matrice_tourelle[j][i][0], "Plasma Turret")) for i in range(0,2)] for j in range(0,5)]
         #self.game_entities_list.append(turret.Turret_selection(self ,self.matrice_tourelle[2][1][1], self.matrice_tourelle[2][1][0], "BlackHole Turret"))
         
-        #self.bot_wave_spawner.manual_spawn(self.matrice_bot[1][1][1], self.matrice_bot[1][1][0], "titan")
+        #self.bot_wave_spawner.manual_spawn(self.matrice_bot[1][1][1], self.matrice_bot[1][1][0], "emp")
         
         self.debug_bot_timer = None
         #self.debug_bot_timer = time.time()
@@ -121,20 +122,21 @@ class Game:
                     
                 elif event.type == pg.MOUSEBUTTONDOWN:
                     
-                    self.mouse_detection()
-                    #print(f"{self.previous_mouse_selection=}, {self.mouse_selection=}")
+                    self.mouse_manager.update()
+                    
+                    #print(f"{self.mouse_manager.previous_mouse_selection=}, {self.mouse_manager.mouse_selection=}")
                     if event.button == 1:
                         
-                        if self.previous_mouse_selection is not None:
+                        if self.mouse_manager.previous_mouse_selection is not None:
                             
-                            if self.mouse_selection[0] == "matrix":
+                            if self.mouse_manager.mouse_selection[0] == "matrix":
                                 
-                                if self.previous_mouse_selection[0] == "shop":
-                                    turret_index = self.previous_mouse_selection[1]
+                                if self.mouse_manager.previous_mouse_selection[0] == "shop":
+                                    turret_index = self.mouse_manager.previous_mouse_selection[1]
                                     if self.liste_tourelle[turret_index][0] != "":
                                         if self.kamas >= self.liste_tourelle[turret_index][1]:
-                                            x = self.matrice_tourelle[self.mouse_selection[2]][self.mouse_selection[1]][1]
-                                            y = self.matrice_tourelle[self.mouse_selection[2]][self.mouse_selection[1]][0]
+                                            x = self.matrice_tourelle[self.mouse_manager.mouse_selection[2]][self.mouse_manager.mouse_selection[1]][1]
+                                            y = self.matrice_tourelle[self.mouse_manager.mouse_selection[2]][self.mouse_manager.mouse_selection[1]][0]
                                             cond = True
                                             for entity in self.game_entities_list:
                                                 # Si l'endroit n'est pas djà occupé par une tourelle
@@ -142,15 +144,15 @@ class Game:
                                                     cond = False
                                                     break
                                             if cond:
-                                                self.kamas -= self.liste_tourelle[self.previous_mouse_selection[1]][1]
+                                                self.kamas -= self.liste_tourelle[self.mouse_manager.previous_mouse_selection[1]][1]
                                                 tourelle = turret.Turret_selection(jeu = self, x=x , y=y, name = self.liste_tourelle[turret_index][0])
                                                 self.game_entities_list.append(tourelle)
                                                 
                                 
-                                elif self.previous_mouse_selection[0] == "red_cross":
+                                elif self.mouse_manager.previous_mouse_selection[0] == "red_cross":
                                     # Récupérer les coordonnées de la tourelle à supprimer
-                                    x = self.matrice_tourelle[self.mouse_selection[2]][self.mouse_selection[1]][1]
-                                    y = self.matrice_tourelle[self.mouse_selection[2]][self.mouse_selection[1]][0]
+                                    x = self.matrice_tourelle[self.mouse_manager.mouse_selection[2]][self.mouse_manager.mouse_selection[1]][1]
+                                    y = self.matrice_tourelle[self.mouse_manager.mouse_selection[2]][self.mouse_manager.mouse_selection[1]][0]
                                     # Parcourir la liste des entités du jeu
                                     for entity in self.game_entities_list:
                                         # Si l'entité est une tourelle et qu'elle est à la position de la tourelle à supprimer
@@ -161,7 +163,7 @@ class Game:
                                             self.game_entities_list.remove(entity)
                                             break
                         
-                            elif self.wave_ended and self.mouse_selection[0] == "next_wave_button":
+                            elif self.wave_ended and self.mouse_manager.mouse_selection[0] == "next_wave_button":
                                 self.wave_ended = False
                                 self.wave += 1
                                 
@@ -337,43 +339,15 @@ class Game:
         self.next_wave_button_rect.bottomright = (self.taille_fenetre[0] - 50, self.taille_fenetre[1] - 10)
         self.fenetre.blit(self.next_wave_button_image, self.next_wave_button_rect)
 
-    def mouse_detection(self):
-        # Récupération des coordonnées de la souris
-        mouse_x, mouse_y = pg.mouse.get_pos()
-
-        # Récupération de la position de la souris dans la matrice
-        mouse_matrix_x = (mouse_x - (295+self.largeur_interface -81//2)) // 81
-        mouse_matrix_y = (mouse_y - (160 -101//2)) // 101
-        
-        # Vérification que la souris est bien dans la matrice
-        if mouse_matrix_y >= 0 and mouse_matrix_y < 5 and mouse_matrix_x >= 0 and mouse_matrix_x < 10:
-            #print(mouse_matrix_y, mouse_matrix_x)
-            self.previous_mouse_selection = self.mouse_selection
-            self.mouse_selection = ("matrix", mouse_matrix_x, mouse_matrix_y)
-            return mouse_matrix_x, mouse_matrix_y
-        
-        elif 50 < mouse_x < self.largeur_interface - 50 and mouse_y > self.taille_fenetre[1] - 87:
-            self.previous_mouse_selection = self.mouse_selection
-            self.mouse_selection = ("red_cross", None)
-
-        elif self.wave_ended and self.next_wave_button_rect.collidepoint(mouse_x, mouse_y):
-            self.previous_mouse_selection = self.mouse_selection
-            self.mouse_selection = ("next_wave_button", None)
-
-        else:
-            for i in range(len(self.liste_rect_shop)):
-                if self.liste_rect_shop[i].collidepoint(mouse_x, mouse_y):
-                    #print("shop", i)
-                    self.previous_mouse_selection = self.mouse_selection
-                    self.mouse_selection = ("shop", i)
-                    return i  # Retourne le mot "shop" et l'index de la tourelle
-            
-            return None
+    
 
     def render(self):
         # Dessiner sur la fenêtre
         self.fenetre.blit(self.fond_ecran, (self.largeur_interface, 0))  # Dessine l'image du fond d'écran aux coordonnées (0, 0)
-
+        
+        self.render_shop_interface()
+        self.red_cross_draw()
+                
         self.render_wave()
         
         # Affichage du "Game Over"
@@ -400,6 +374,9 @@ class Game:
 
             if self.wave_ended and cond and not self.is_player_win:
                 self.next_wave_button_render()
+            
+            self.mouse_manager.previous_selection_on_mouse()
+                
             
         if self.paused:
             self.render_pause()

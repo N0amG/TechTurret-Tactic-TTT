@@ -2,26 +2,25 @@ TechTurret Tactic - TTT
 
 ---------------
 
-Version 0.7
+Version 0.7.1
 
 
-    - nouveauté :
+    - Nouveauté :
 
-        - Système de vague fonctionnel.
-        - Combat de boss a la 10eme vague
-        - Victoire de la partie a la défaite du boss
+        - Meilleur gestion de la souris
+
+        - Preview de l'action séléctionner en transparence sur la souris
+
 
 ----------------
 
-    - amélioration :
+    - Amélioration :
         - buff :
-            TITAN : life : 2500 -> 5000
         - nerf :
-            Omni Turret : damage : 10 -> 5
         
 ----------------
 
-    - fix de bug :
+    - Fix de bug :
         Speed of TITAN projectiles
 
 ----------------

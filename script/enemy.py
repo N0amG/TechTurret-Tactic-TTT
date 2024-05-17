@@ -39,7 +39,6 @@ class Bot_Wave_Spawner:
     def update(self):
         
         if not self.jeu.wave_ended:
-            print(self.jeu.wave == self.boss_wave and self.spawned >= 1 )            
             if self.spawned >= self.bot_quantity or self.available_points <= self.bot_price_dict["basic"] or (self.jeu.wave == self.boss_wave and self.spawned >= 1):
                 cond = True
                 for bot in self.jeu.game_entities_list:
@@ -72,7 +71,7 @@ class Bot_Wave_Spawner:
             return False
     
     def next_spawn(self):
-        print(self.sub_wave_cut, self.spawned, self.sub_wave, " | S.R : ", self.spawn_rate)
+        #print(self.sub_wave_cut, self.spawned, self.sub_wave, " | S.R : ", self.spawn_rate)
         if self.spawned < self.bot_quantity:
             nb_bot = 0
             for bot in self.jeu.game_entities_list:
@@ -183,12 +182,12 @@ class Bot_Wave_Spawner:
             self.last_spawn = time.time()
             if bot_type != "titan": self.available_points -= self.bot_price_dict[bot_type]
             #print(self.list_of_bots_to_spawn)
-            print(f"subwave : {self.sub_wave} | {self.spawned} / {self.bot_quantity} bots spawned")
+            #print(f"subwave : {self.sub_wave} | {self.spawned} / {self.bot_quantity} bots spawned")
             return True
         
         else:
             #print(self.list_of_bots_to_spawn)
-            print(f"subwave : {self.sub_wave} | {self.spawned} / {self.bot_quantity} bots spawned")
+            #print(f"subwave : {self.sub_wave} | {self.spawned} / {self.bot_quantity} bots spawned")
             return False
         
     def manual_spawn(self, y, x, bot_type):
@@ -806,7 +805,7 @@ class StealthBlack_Bot(Bot):
 
 class TITAN_Boss(Bot):
     def __init__(self, jeu, x, y, id):
-        super().__init__(jeu, x, y, id, vie = 100, point = 2500,degats=0, vitesse= 0.25, portee = 0, cadence = 5, path ="enemy/titan/titan_moving_frames/frame_", nb_images=4, coef = (160*5, 96*5), name="TITAN_Boss", fps= 45)
+        super().__init__(jeu, x, y, id, vie = 5000, point = 2500,degats=0, vitesse= 0.25, portee = 0, cadence = 5, path ="enemy/titan/titan_moving_frames/frame_", nb_images=4, coef = (160*5, 96*5), name="TITAN_Boss", fps= 45)
 
         self.state_list = ["moving", "standing" , "attack_1", "attack_2",
                            "shield", "death_beam", "damaged", "death"]

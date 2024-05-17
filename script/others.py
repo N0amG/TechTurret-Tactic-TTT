@@ -84,9 +84,6 @@ class Animation(pg.sprite.Sprite):
         
         fenetre.blit(self.image, self.rect)
 
-        if self.name == "impulse":
-            self.jeu.render_shop_interface()
-            self.jeu.red_cross_draw()
 
 
 class TITAN_Animation(pg.sprite.Sprite):
@@ -244,6 +241,100 @@ class TITAN_Animation(pg.sprite.Sprite):
         # hitbox
         #pg.draw.rect(fenetre, (255,0,0), (self.rect.x, self.rect.y, self.rect.width, self.rect.height), 1)
         fenetre.blit(self.image, self.rect)
+
+
+class MouseManager:
+    def __init__(self, jeu):
+        self.jeu = jeu
+        self.mouse_position = pg.mouse.get_pos()
+        self.mouse_button_state = None
+        self.last_mouse_event = None
+        
+        self.mouse_selection = None
+        self.previous_mouse_selection = None #('matrix', 0, 0)
+
+    def update(self):
+        self.mouse_position = pg.mouse.get_pos()
+        self.mouse_button_state = pg.mouse.get_pressed()
+        self.last_mouse_event = pg.mouse.get_rel()
+        
+        if self.mouse_button_state[0]:
+            self.handle_mouse_event()
+        
+        if self.mouse_button_state[2]:
+            self.previous_mouse_selection = None #('matrix', 0, 0)
+            self.mouse_selection = None
+
+        #print(self.previous_mouse_selection, self.mouse_selection)
+        
+        
+        
+    def handle_mouse_event(self):
+        
+        if self.mouse_button_state[0]:
+            # Récupération de la position de la souris dans la matrice
+            mouse_matrix_x = (self.mouse_position[0] - (295+self.jeu.largeur_interface -81//2)) // 81
+            mouse_matrix_y = (self.mouse_position[1] - (160 -101//2)) // 101
+            
+            # Vérification que la souris est bien dans la matrice
+            if mouse_matrix_y >= 0 and mouse_matrix_y < 5 and mouse_matrix_x >= 0 and mouse_matrix_x < 10:
+                #print(mouse_matrix_y, mouse_matrix_x)
+                if self.mouse_selection != None and self.mouse_selection[0] != "matrix":
+                    self.previous_mouse_selection = self.mouse_selection
+                self.mouse_selection = ("matrix", mouse_matrix_x, mouse_matrix_y)
+                return mouse_matrix_x, mouse_matrix_y
+            
+            elif 50 < self.mouse_position[0] < self.jeu.largeur_interface - 50 and self.mouse_position[1] > self.jeu.taille_fenetre[1] - 87:
+                self.previous_mouse_selection = self.mouse_selection
+                self.mouse_selection = ("red_cross", None)
+
+            elif self.jeu.wave_ended and self.jeu.next_wave_button_rect.collidepoint(self.mouse_position[0], self.mouse_position[1]):
+                self.previous_mouse_selection = self.mouse_selection
+                self.mouse_selection = ("next_wave_button", None)
+
+            else:
+                for i in range(len(self.jeu.liste_rect_shop)):
+                    if self.jeu.liste_rect_shop[i].collidepoint(self.mouse_position[0], self.mouse_position[1]):
+                        #print("shop", i)
+                        self.previous_mouse_selection = self.mouse_selection
+                        self.mouse_selection = ("shop", i)
+                        return i  # Retourne le mot "shop" et l'index de la tourelle
+                
+                return None
+
+    
+    def previous_selection_on_mouse(self):
+        self.mouse_position = pg.mouse.get_pos()
+        
+        image_list = self.jeu.liste_tourelle_image
+            
+        if self.mouse_selection != None:
+            if self.mouse_selection[0] == "shop":
+                image = image_list[self.mouse_selection[1]]
+                image.set_alpha(160)
+                self.jeu.fenetre.blit(image, (self.mouse_position[0]- image.get_width()//2, self.mouse_position[1]- image.get_height()//2))
+                return True
+            if self.mouse_selection[0] == "red_cross":
+                image = pg.transform.scale(pg.image.load("assets/images/others/red_cross.png").convert_alpha(), (50, 50))
+                image.set_alpha(160)
+                self.jeu.fenetre.blit(image, (self.mouse_position[0]- image.get_width()//2, self.mouse_position[1]- image.get_height()//2))
+                return True
+        
+        if self.previous_mouse_selection != None:
+            if self.previous_mouse_selection[0] == "shop":
+                image = image_list[self.previous_mouse_selection[1]]
+                image.set_alpha(160)
+                self.jeu.fenetre.blit(image, (self.mouse_position[0]- image.get_width()//2, self.mouse_position[1]- image.get_height()//2))        
+                return True
+            if self.previous_mouse_selection[0] == "red_cross":
+                image = pg.transform.scale(pg.image.load("assets/images/others/red_cross.png").convert_alpha(), (50, 50))
+                image.set_alpha(160)
+                self.jeu.fenetre.blit(image, (self.mouse_position[0]- image.get_width()//2, self.mouse_position[1]- image.get_height()//2))
+                return True
+        
+        
+        
+        return False
 
 if __name__ == "__main__":
     import game

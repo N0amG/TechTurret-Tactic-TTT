@@ -9,7 +9,7 @@ from pygame import BLEND_RGB_ADD
 
 class Turret_selection:
     def __new__(cls, jeu, x, y, name):
-        if name == "Turret":
+        if name == "Basic Turret":
             return Basic_Turret(jeu, x, y)
         
         elif name == "Laser Turret":
@@ -33,7 +33,6 @@ class Turret_selection:
         
         else:
             return None
-
 
 class Turret:
     def __init__(self, jeu, x, y, vie, degats, portee, cadence, prix, name):
