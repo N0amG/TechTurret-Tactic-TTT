@@ -335,6 +335,7 @@ class Plasma_Projectile(Projectile):
             self.jeu.game_entities_list.remove(self)
             return
         
+
         #self.render_debug(fenetre)
         if not self.jeu.paused:
             if self.state == "active":
@@ -377,6 +378,11 @@ class Plasma_Projectile(Projectile):
             if cible != None:
                 degat =  max(0, (self.tourelle.portee - distance_min) / self.tourelle.portee) * self.degats  # Les dégâts augmentent lorsque l'ennemi se rapproche
                 self.cible_x = cible.position[0]
+                self.cible_width = cible.rect.width/2
+                if self.jeu.game_entities_list.index(self) < self.jeu.game_entities_list.index(cible):
+                    self.jeu.game_entities_list.remove(self)
+                    self.jeu.game_entities_list.append(self)
+            
                 return cible.get_damage(degat)
 
             if self.position[0] > self.jeu.taille_fenetre[0]:

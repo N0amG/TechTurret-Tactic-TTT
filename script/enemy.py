@@ -651,6 +651,7 @@ class Fire_Projectile:
         self.last_particle = time.time()
         self.tourelle = tourelle
         self.cible_x = 0
+        self.cible_width = 0
         self.state = "unactive" or "active"
         
     def circle_surf(self, radius, color):
@@ -682,7 +683,7 @@ class Fire_Projectile:
                     radius = particle[2] * 2
                     fenetre.blit(self.circle_surf(radius, (100, 20, 20)), (int(particle[0][0] - radius), int(particle[0][1] - radius)), special_flags=BLEND_RGB_ADD)
 
-                    if particle[2] <= 0 or particle[0][0] <= self.cible_x:
+                    if particle[2] <= 0 or particle[0][0] <= self.cible_x + self.cible_width:
                         self.particles.remove(particle)
         else:
             for particle in self.particles:
@@ -710,6 +711,12 @@ class Fire_Projectile:
             if cible != None:
                 degat =  max(0, (self.tourelle.portee - distance_min) / self.tourelle.portee) * self.degats  # Les dégâts augmentent lorsque l'ennemi se rapproche
                 self.cible_x = cible.position[0]
+                self.cible_width = cible.rect.width/2
+                
+                if self.jeu.game_entities_list.index(self) < self.jeu.game_entities_list.index(cible):
+                    self.jeu.game_entities_list.remove(self)
+                    self.jeu.game_entities_list.append(self)
+                    
                 return cible.get_damage(degat)
 
             if self.position[0] < 0:  # Check if the projectile has passed the left edge of the window

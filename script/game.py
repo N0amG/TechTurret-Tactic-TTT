@@ -1,4 +1,6 @@
 import pygame as pg
+import sys
+
 import turret
 import others
 import enemy
@@ -7,10 +9,12 @@ import time
 
 class Game:
     
-    def __init__(self):
+    def __init__(self, menu):
         
         # Initialisation de pg
         pg.init()
+        
+        self.menu = menu
         
         # Définir les FPS (images par seconde)
         self.fps = 75
@@ -26,7 +30,7 @@ class Game:
 
         # Créer la fenêtre
         self.fenetre = pg.display.set_mode(self.taille_fenetre)
-        pg.display.set_caption("TTT - TechTurret Tactics")
+        pg.display.set_caption("TTT - TechTurretTactic")
 
         self.matrice_tourelle = [[0 for j in range(10)] for i in range(5)]
         
@@ -48,7 +52,11 @@ class Game:
         
         self.paused = False
         
+        self.quit = False
+        
         self.next_wave_button_render() # appel de la méthode pour créer les attribut
+        
+        self.pause_menu()
         
         # Créer une boucle pour générer les coordonnées de chaque élément
         for i in range(5):
@@ -72,7 +80,7 @@ class Game:
         
         
         # gestion de la souris
-        self.mouse_manager = others.MouseManager(jeu=self)
+        self.mouse_manager = others.MouseManager(scene=self, scene_name="game")
         
         
         # Mise en place du shop
@@ -86,9 +94,14 @@ class Game:
         self.red_cross_draw()
         
         # Font pour le rendu du texte de la monnaie
-        self.font_kamas = pg.font.Font(None, 30)
+        self.font_kamas = pg.font.Font("assets/fonts\Peaberry-Font-v2.0\Peaberry-Font-v2.0\Peaberry Font Family\Peaberry Monospace\PeaberryMono.ttf", 30)
         # Surface pour le rendu de la monnaie (texte + image)
         self.kamas_surface = None
+        
+        # Bouton pause
+        self.pause_button = others.Button(x=self.taille_fenetre[0] - 60 , y=10, 
+                                          image_normal = "assets\images\Button Kit/16x16 buttons Style 2 menu icons/16x16 Menu Buttons (116).png", 
+                                          image_pressed="assets\images\Button Kit/16x16 buttons Style 2 menu icons/16x16 Menu Buttons (115).png", scale = (50, 50))
         
         # Gérer les vagues d'ennemis
         self.wave = 1
@@ -98,10 +111,10 @@ class Game:
                 
         #test et placement des éléments    
         #[[self.game_entities_list.append(turret.Turret_selection(self ,self.matrice_tourelle[j][i][1], self.matrice_tourelle[j][i][0], "Omni Turret")) for i in range(0,8)] for j in range(0,5)]
-        #[[self.game_entities_list.append(turret.Turret_selection(self ,self.matrice_tourelle[j][i][1], self.matrice_tourelle[j][i][0], "Plasma Turret")) for i in range(0,2)] for j in range(0,5)]
+        #[[self.game_entities_list.append(turret.Turret_selection(self ,self.matrice_tourelle[j][i][1], self.matrice_tourelle[j][i][0], "Plasma Turret")) for i in range(7,8)] for j in range(0,5)]
         #self.game_entities_list.append(turret.Turret_selection(self ,self.matrice_tourelle[2][1][1], self.matrice_tourelle[2][1][0], "BlackHole Turret"))
         
-        #self.bot_wave_spawner.manual_spawn(self.matrice_bot[1][1][1], self.matrice_bot[1][1][0], "emp")
+        #self.bot_wave_spawner.manual_spawn(self.matrice_bot[1][1][1], self.matrice_bot[1][1][0], "incinerator")
         
         self.debug_bot_timer = None
         #self.debug_bot_timer = time.time()
@@ -115,67 +128,73 @@ class Game:
             self.clock.tick(self.fps)
             #print(self.clock.get_fps())
             # Gestion des événements
-            for event in pg.event.get():
-                
-                if event.type == pg.QUIT:
-                    running = False
+            self.mouse_manager.update()
+            
+            if self.mouse_manager.mouse_selection == "Pause":
+                    self.paused = not self.paused
+                    self.mouse_manager.mouse_selection = None
+            else:   
+                for event in pg.event.get():
                     
-                elif event.type == pg.MOUSEBUTTONDOWN:
-                    
-                    self.mouse_manager.update()
-                    
-                    #print(f"{self.mouse_manager.previous_mouse_selection=}, {self.mouse_manager.mouse_selection=}")
-                    if event.button == 1:
+                    if event.type == pg.QUIT:
+                        running = False
+                        sys.exit()
                         
-                        if self.mouse_manager.previous_mouse_selection is not None:
+                    if pg.mouse.get_pressed()[0] or pg.mouse.get_pressed()[2]:
+                        if not self.is_game_over and not self.paused:
                             
-                            if self.mouse_manager.mouse_selection[0] == "matrix":
-                                
-                                if self.mouse_manager.previous_mouse_selection[0] == "shop":
-                                    turret_index = self.mouse_manager.previous_mouse_selection[1]
-                                    if self.liste_tourelle[turret_index][0] != "":
-                                        if self.kamas >= self.liste_tourelle[turret_index][1]:
+                        
+                        #print(f"{self.mouse_manager.previous_mouse_selection=}, {self.mouse_manager.mouse_selection=}")
+                            
+                            if not self.paused:
+                                if self.mouse_manager.previous_mouse_selection is not None:
+                                    
+                                    if self.mouse_manager.mouse_selection != None and self.mouse_manager.mouse_selection[0] == "matrix":
+                                        
+                                        if self.mouse_manager.previous_mouse_selection[0] == "shop":
+                                            turret_index = self.mouse_manager.previous_mouse_selection[1]
+                                            if self.liste_tourelle[turret_index][0] != "":
+                                                if self.kamas >= self.liste_tourelle[turret_index][1]:
+                                                    x = self.matrice_tourelle[self.mouse_manager.mouse_selection[2]][self.mouse_manager.mouse_selection[1]][1]
+                                                    y = self.matrice_tourelle[self.mouse_manager.mouse_selection[2]][self.mouse_manager.mouse_selection[1]][0]
+                                                    cond = True
+                                                    for entity in self.game_entities_list:
+                                                        # Si l'endroit n'est pas djà occupé par une tourelle
+                                                        if isinstance(entity, turret.Turret) and entity.rect.collidepoint(x, y):
+                                                            cond = False
+                                                            break
+                                                    if cond:
+                                                        self.kamas -= self.liste_tourelle[self.mouse_manager.previous_mouse_selection[1]][1]
+                                                        tourelle = turret.Turret_selection(jeu = self, x=x , y=y, name = self.liste_tourelle[turret_index][0])
+                                                        self.game_entities_list.append(tourelle)
+                                                        
+                                        
+                                        elif self.mouse_manager.previous_mouse_selection[0] == "red_cross":
+                                            # Récupérer les coordonnées de la tourelle à supprimer
                                             x = self.matrice_tourelle[self.mouse_manager.mouse_selection[2]][self.mouse_manager.mouse_selection[1]][1]
                                             y = self.matrice_tourelle[self.mouse_manager.mouse_selection[2]][self.mouse_manager.mouse_selection[1]][0]
-                                            cond = True
+                                            # Parcourir la liste des entités du jeu
                                             for entity in self.game_entities_list:
-                                                # Si l'endroit n'est pas djà occupé par une tourelle
-                                                if isinstance(entity, turret.Turret) and entity.rect.collidepoint(x, y):
-                                                    cond = False
+                                                # Si l'entité est une tourelle et qu'elle est à la position de la tourelle à supprimer
+                                                if isinstance(entity, turret.Turret) and entity.rect.collidepoint(x,y):
+                                                    # Supprimer la tourelle de la liste des entités du jeu
+                                                    self.kamas += entity.prix // 2
+                                                    entity.is_dead = True
+                                                    self.game_entities_list.remove(entity)
                                                     break
-                                            if cond:
-                                                self.kamas -= self.liste_tourelle[self.mouse_manager.previous_mouse_selection[1]][1]
-                                                tourelle = turret.Turret_selection(jeu = self, x=x , y=y, name = self.liste_tourelle[turret_index][0])
-                                                self.game_entities_list.append(tourelle)
-                                                
-                                
-                                elif self.mouse_manager.previous_mouse_selection[0] == "red_cross":
-                                    # Récupérer les coordonnées de la tourelle à supprimer
-                                    x = self.matrice_tourelle[self.mouse_manager.mouse_selection[2]][self.mouse_manager.mouse_selection[1]][1]
-                                    y = self.matrice_tourelle[self.mouse_manager.mouse_selection[2]][self.mouse_manager.mouse_selection[1]][0]
-                                    # Parcourir la liste des entités du jeu
-                                    for entity in self.game_entities_list:
-                                        # Si l'entité est une tourelle et qu'elle est à la position de la tourelle à supprimer
-                                        if isinstance(entity, turret.Turret) and entity.rect.collidepoint(x,y):
-                                            # Supprimer la tourelle de la liste des entités du jeu
-                                            self.kamas += entity.prix // 2
-                                            entity.is_dead = True
-                                            self.game_entities_list.remove(entity)
-                                            break
-                        
-                            elif self.wave_ended and self.mouse_manager.mouse_selection[0] == "next_wave_button":
-                                self.wave_ended = False
-                                self.wave += 1
-                                
-                elif event.type == pg.KEYDOWN:
-                    if event.key == pg.K_ESCAPE:
-                        self.is_game_over = True
-                        self.is_player_win = False
+                                print(f" sortie souris : {self.mouse_manager.mouse_selection}")
+                                if self.wave_ended and self.mouse_manager.mouse_selection != None and self.mouse_manager.mouse_selection[0] == "next_wave_button":
+                                    
+                                    self.wave_ended = False
+                                    self.wave += 1
+                                        
+                    elif event.type == pg.KEYDOWN:
+                        if event.key == pg.K_ESCAPE:
+                            self.is_game_over = True
+                            self.is_player_win = False
                     
-                    elif event.key == pg.K_LCTRL:  # Si la touche Ctrl gauche est pressée
-                        self.paused = not self.paused  # Inverse l'état de pause
-                        #print("paused")
-                            
+            if self.quit:
+                running = False
 
 
             # Logique du jeu
@@ -186,9 +205,6 @@ class Game:
                 
                 # Affichage du jeu
             self.render()
-
-        # Quitter pg
-        pg.quit()
 
     def update(self):
         if not self.is_game_over and not self.paused:
@@ -252,33 +268,33 @@ class Game:
         #for entity in self.game_entities_list : print(entity.name)
 
     def render_wave(self):
-        font = pg.font.Font(None, 50)
+        font = pg.font.Font("assets/fonts\Peaberry-Font-v2.0\Peaberry-Font-v2.0\Peaberry Font Family\Peaberry Monospace\PeaberryMono.ttf", 50)
         text = font.render(f"Wave {self.wave}", True, (255, 255, 255))
-        text_rect = text.get_rect(topright=(self.taille_fenetre[0] - 10, 10))
+        text_rect = text.get_rect(topright=(self.taille_fenetre[0]//1.75, 10))
         self.fenetre.blit(text, text_rect)
 
     def render_game_over(self):
-        font = pg.font.Font(None, 100)
+        font = pg.font.Font("assets/fonts\Peaberry-Font-v2.0\Peaberry-Font-v2.0\Peaberry Font Family\Peaberry Monospace\PeaberryMono.ttf", 100)
         text = font.render("Game Over", True, (255, 0, 0))
         text_rect = text.get_rect(center=(self.taille_fenetre[0] // 2, self.taille_fenetre[1] // 2 - 150))
         self.fenetre.blit(text, text_rect)
 
     def render_game_win(self):
-        font = pg.font.Font(None, 100)
+        font = pg.font.Font("assets/fonts\Peaberry-Font-v2.0\Peaberry-Font-v2.0\Peaberry Font Family\Peaberry Monospace\PeaberryMono.ttf", 100)
         text = font.render("Win !!!", True, (0, 255, 0))
         text_rect = text.get_rect(center=(self.taille_fenetre[0] // 2, self.taille_fenetre[1] // 2 - 150))
         self.fenetre.blit(text, text_rect)
         
     def render_pause(self):
-        font = pg.font.Font(None, 100)
+        font = pg.font.Font("assets/fonts\Peaberry-Font-v2.0\Peaberry-Font-v2.0\Peaberry Font Family\Peaberry Monospace\PeaberryMono.ttf", 100)
         text = font.render("Pause", True, (255, 255, 255))
-        text_rect = text.get_rect(center=(self.taille_fenetre[0] // 2, self.taille_fenetre[1] // 2 - 150))
+        text_rect = text.get_rect(center=(self.taille_fenetre[0] // 2 + 30, self.taille_fenetre[1] // 2 - 200))
         self.fenetre.blit(text, text_rect)
 
     def render_shop_interface(self):
         pg.draw.rect(self.fenetre, (68,95,144), (0, 0, self.largeur_interface, self.taille_fenetre[1]))
         
-        font = pg.font.Font(None, 27)
+        font = pg.font.Font("assets/fonts\Peaberry-Font-v2.0\Peaberry-Font-v2.0\Peaberry Font Family\Peaberry Monospace\PeaberryMono.ttf", 15)
         
         for i in range(len(self.liste_tourelle)):
             rect = pg.draw.rect(self.fenetre, (255, 255, 255), (10, 10 + i * 83, 155, 75))
@@ -339,8 +355,33 @@ class Game:
         self.next_wave_button_rect.bottomright = (self.taille_fenetre[0] - 50, self.taille_fenetre[1] - 10)
         self.fenetre.blit(self.next_wave_button_image, self.next_wave_button_rect)
 
-    
+    def pause_menu(self):
+        square_size = (1000, 600)
+        square_x = self.taille_fenetre[0] // 2 - square_size[0] // 2.25
+        square_y = self.taille_fenetre[1] // 2 - square_size[1] // 2.25
 
+        surface = pg.Surface((square_size[0], square_size[1]))
+        surface.fill((0, 0, 0))
+        surface.set_alpha(200)
+
+        
+        self.sound_button = others.Button(square_x + square_size[0]//1.1, square_y + 50, 
+                                  "assets\images\Button Kit/16x16 buttons Style 2 menu icons/16x16 Menu Buttons (6).png", 
+                                  "assets\images\Button Kit/16x16 buttons Style 2 menu icons/16x16 Menu Buttons (5).png", (50,50))
+        
+        self.quit_button = others.Button(square_x + square_size[0]//2.75, square_y + square_size[1] - 100, 
+                                  "assets/images/Button Kit/32x16 buttons Style 1 with symbols/32x16 Button (19).png", 
+                                  "assets/images/Button Kit/32x16 buttons Style 1 with symbols/32x16 Button (18).png")
+
+        
+        self.sound_button.rect.x, self.sound_button.rect.y = square_x + square_size[0]//1.1, square_y + 50
+        self.quit_button.rect.x, self.quit_button.rect.y = square_x + square_size[0]//2.75, square_y + square_size[1] - 100
+        
+        self.fenetre.blit(surface, (square_x, square_y))
+        self.sound_button.render(self.fenetre)
+        self.quit_button.render(self.fenetre)
+        
+    
     def render(self):
         # Dessiner sur la fenêtre
         self.fenetre.blit(self.fond_ecran, (self.largeur_interface, 0))  # Dessine l'image du fond d'écran aux coordonnées (0, 0)
@@ -349,6 +390,8 @@ class Game:
         self.red_cross_draw()
                 
         self.render_wave()
+        
+        self.pause_button.render(self.fenetre)
         
         # Affichage du "Game Over"
         if self.is_game_over:
@@ -375,15 +418,18 @@ class Game:
             if self.wave_ended and cond and not self.is_player_win:
                 self.next_wave_button_render()
             
-            self.mouse_manager.previous_selection_on_mouse()
+            if not self.paused:
+                self.mouse_manager.previous_selection_on_mouse()
                 
             
         if self.paused:
+            self.pause_menu()
             self.render_pause()
         # Mettre à jour l'affichage
         pg.display.flip()
 
-
-if __name__ == "__main__":
-    game = Game()
-    game.run()
+if __name__ == '__main__':
+    import menu
+    menu = menu.Menu()
+    jeu = Game(menu)
+    jeu.run()
