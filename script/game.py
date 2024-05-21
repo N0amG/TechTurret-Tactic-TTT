@@ -16,6 +16,13 @@ class Game:
         
         self.menu = menu
         
+        self.file_manager = others.FileManager("settings/settings.json")
+        
+        self.is_info_menu_open = False
+        
+        # gestion de la souris
+        self.mouse_manager = others.MouseManager(scene=self, scene_name="game")
+        
         # Définir les FPS (images par seconde)
         self.fps = 75
         self.clock = pg.time.Clock()
@@ -52,11 +59,13 @@ class Game:
         
         self.paused = False
         
+        self.is_settings_menu_open = False
+        
         self.quit = False
         
         self.next_wave_button_render() # appel de la méthode pour créer les attribut
         
-        self.pause_menu()
+        self.button_init()
         
         # Créer une boucle pour générer les coordonnées de chaque élément
         for i in range(5):
@@ -79,15 +88,14 @@ class Game:
         self.is_player_win = False
         
         
-        # gestion de la souris
-        self.mouse_manager = others.MouseManager(scene=self, scene_name="game")
-        
-        
         # Mise en place du shop
         # Kama = monnaie du jeu
         self.kamas = 300_000 # start a 300 ?
         self.last_kama_time = time.time()
         self.kama_image = pg.image.load("assets/images/others/kama.png")
+        
+        #score = score du joueur : nombre de kama accumulé
+        self.score = 0
         
         self.liste_rect_shop = []
         self.render_shop_interface()
@@ -98,17 +106,17 @@ class Game:
         # Surface pour le rendu de la monnaie (texte + image)
         self.kamas_surface = None
         
-        # Bouton pause
-        self.pause_button = others.Button(x=self.taille_fenetre[0] - 60 , y=10, 
-                                          image_normal = "assets\images\Button Kit/16x16 buttons Style 2 menu icons/16x16 Menu Buttons (116).png", 
-                                          image_pressed="assets\images\Button Kit/16x16 buttons Style 2 menu icons/16x16 Menu Buttons (115).png", scale = (50, 50))
-        
         # Gérer les vagues d'ennemis
         self.wave = 1
         
+        self.file_manager.set_setting("total_games_played", self.file_manager.get_setting("total_games_played")+1)
+        
         self.wave_ended = False
         self.bot_wave_spawner = enemy.Bot_Wave_Spawner(jeu=self)
-                
+        
+        
+        self.music_manager()
+        
         #test et placement des éléments    
         #[[self.game_entities_list.append(turret.Turret_selection(self ,self.matrice_tourelle[j][i][1], self.matrice_tourelle[j][i][0], "Omni Turret")) for i in range(0,8)] for j in range(0,5)]
         #[[self.game_entities_list.append(turret.Turret_selection(self ,self.matrice_tourelle[j][i][1], self.matrice_tourelle[j][i][0], "Plasma Turret")) for i in range(7,8)] for j in range(0,5)]
@@ -130,7 +138,7 @@ class Game:
             # Gestion des événements
             self.mouse_manager.update()
             
-            if self.mouse_manager.mouse_selection == "Pause":
+            if self.mouse_manager.mouse_selection == "pause":
                     self.paused = not self.paused
                     self.mouse_manager.mouse_selection = None
             else:   
@@ -139,10 +147,13 @@ class Game:
                     if event.type == pg.QUIT:
                         running = False
                         sys.exit()
+                    
+                    if event.type == self.menu.total_play_time_timer:
+                        self.menu.add_play_time()
                         
                     if pg.mouse.get_pressed()[0] or pg.mouse.get_pressed()[2]:
                         if not self.is_game_over and not self.paused:
-                            
+                            self.mouse_manager.update()
                         
                         #print(f"{self.mouse_manager.previous_mouse_selection=}, {self.mouse_manager.mouse_selection=}")
                             
@@ -178,33 +189,43 @@ class Game:
                                                 # Si l'entité est une tourelle et qu'elle est à la position de la tourelle à supprimer
                                                 if isinstance(entity, turret.Turret) and entity.rect.collidepoint(x,y):
                                                     # Supprimer la tourelle de la liste des entités du jeu
-                                                    self.kamas += entity.prix // 2
+                                                    self.kama_loot(entity)
                                                     entity.is_dead = True
                                                     self.game_entities_list.remove(entity)
                                                     break
-                                print(f" sortie souris : {self.mouse_manager.mouse_selection}")
+
+                                
                                 if self.wave_ended and self.mouse_manager.mouse_selection != None and self.mouse_manager.mouse_selection[0] == "next_wave_button":
-                                    
                                     self.wave_ended = False
                                     self.wave += 1
-                                        
+                                    self.add_wave_to_stats()
+                                    self.add_max_wave_to_stats()
+                    
                     elif event.type == pg.KEYDOWN:
                         if event.key == pg.K_ESCAPE:
                             self.is_game_over = True
                             self.is_player_win = False
-                    
+            
             if self.quit:
                 running = False
 
 
             # Logique du jeu
-
+            self.music_manager()
+            
+            if self.is_settings_menu_open:
+                self.menu.settings_menu.run()
+                self.is_settings_menu_open = False
+                
             # Mise à jour du jeu
             if not self.paused:
                 self.update()
                 
                 # Affichage du jeu
+
+
             self.render()
+            
 
     def update(self):
         if not self.is_game_over and not self.paused:
@@ -223,6 +244,8 @@ class Game:
                 if entity.is_dead:
                     if isinstance(entity, enemy.Bot):
                         self.kama_loot(entity)
+                        self.add_killed_bot_to_stats()
+                        
                     
                     self.game_entities_list.remove(entity)
                     
@@ -249,7 +272,71 @@ class Game:
                 if self.bot_wave_spawner.boss_wave == self.wave:
                     self.is_player_win = True
                     self.is_game_over = True
-                    
+    
+    def first_music_init(self):
+        pg.mixer.music.load("assets/musics/first_part.ogg")
+        self.file_manager.set_setting("current_music", "first_part")
+        if self.file_manager.get_setting('is_music_active'):
+            pg.mixer.music.set_volume(self.file_manager.get_setting('music_volume'))
+        else:
+            pg.mixer.music.set_volume(0)
+        pg.mixer.music.play(-1)
+    
+    def second_music_init(self):
+        pg.mixer.music.load("assets/musics/second_part.ogg")
+        self.file_manager.set_setting("current_music", "second_part")
+        if self.file_manager.get_setting('is_music_active'):
+            pg.mixer.music.set_volume(self.file_manager.get_setting('music_volume'))
+        else:
+            pg.mixer.music.set_volume(0)
+        pg.mixer.music.play(-1)
+    
+    def boss_music_init(self):
+        pg.mixer.music.load("assets/musics/boss.ogg")
+        self.file_manager.set_setting("current_music", "boss")
+        if self.file_manager.get_setting('is_music_active'):
+            pg.mixer.music.set_volume(self.file_manager.get_setting('music_volume'))
+        else:
+            pg.mixer.music.set_volume(0)
+        pg.mixer.music.play(-1)
+    
+    def music_manager(self):
+        
+        if self.paused:
+            pg.mixer.music.pause()
+            return
+        else: 
+            pg.mixer.music.unpause()
+        
+        if self.wave <= 2 and self.file_manager.get_setting('current_music') != "first_part" :
+            return self.first_music_init()
+        elif 2 < self.wave < 10 and self.file_manager.get_setting('current_music') != "second_part":
+            return self.second_music_init()
+        
+        elif self.wave == 10 and self.file_manager.get_setting('current_music') != "boss":
+            return self.boss_music_init()
+        
+        if self.file_manager.get_setting('is_music_active'):
+            pg.mixer.music.set_volume(self.file_manager.get_setting('music_volume'))
+        else:
+            pg.mixer.music.set_volume(0)
+            
+    def add_killed_bot_to_stats(self):
+        killed_bot = self.file_manager.get_setting("killed_bot")
+        killed_bot += 1
+        self.file_manager.set_setting("killed_bot", killed_bot)
+        
+    def add_wave_to_stats(self):
+        wave = self.file_manager.get_setting("total_wave")
+        wave += 1
+        self.file_manager.set_setting("total_wave", wave)
+    
+    def add_max_wave_to_stats(self):
+        max_wave = self.file_manager.get_setting("max_wave")
+        if self.wave > max_wave:
+            max_wave = self.wave
+            self.file_manager.set_setting("max_wave", max_wave)
+            
     def render_debug(self):
         for i in range(5):
             for j in range(10):
@@ -339,15 +426,28 @@ class Game:
 
         return surface
 
-    def kama_loot(self, enemy = None):
-        # Donner 50 kamas toutes les minutes
+    def kama_loot(self, entity = None):
+        # Donner 25 kamas toutes les 5  secondes
         if time.time() - self.last_kama_time >= 5 and self.wave_ended == False:
             self.kamas += 25
             self.last_kama_time = time.time()
 
-        if enemy is not None:
-            self.kamas += enemy.point
-
+        if entity is not None:
+            if isinstance(entity, turret.Turret):
+                self.kamas += entity.prix//2
+                self.file_manager.set_setting("turrets_sold", self.file_manager.get_setting("turrets_sold")+1)
+                
+            elif isinstance(entity, enemy.Bot):
+                self.kamas += entity.point//2
+                self.score += entity.point
+                self.add_best_score_to_stats()
+            
+    def add_best_score_to_stats(self):
+        best_score = self.file_manager.get_setting("best_score")
+        if self.score > best_score:
+            best_score = self.score
+            self.file_manager.set_setting("best_score", best_score)
+        
     def next_wave_button_render(self):
         self.next_wave_button_image = pg.image.load("assets/images/others/next_wave_button.png")
         self.next_wave_button_image = pg.transform.scale(self.next_wave_button_image, (32*2, 24*2))
@@ -355,6 +455,37 @@ class Game:
         self.next_wave_button_rect.bottomright = (self.taille_fenetre[0] - 50, self.taille_fenetre[1] - 10)
         self.fenetre.blit(self.next_wave_button_image, self.next_wave_button_rect)
 
+    def button_init(self):
+        square_size = (1000, 600)
+        square_x = self.taille_fenetre[0] // 2 - square_size[0] // 2.25
+        square_y = self.taille_fenetre[1] // 2 - square_size[1] // 2.25
+
+        # Bouton pause
+        self.pause_button = others.Button(x=self.taille_fenetre[0] - 60 , y=10, 
+                                          image_normal = "assets\images\Button Kit/16x16 buttons Style 2 menu icons/16x16 Menu Buttons (116).png", 
+                                          image_pressed="assets\images\Button Kit/16x16 buttons Style 2 menu icons/16x16 Menu Buttons (115).png", scale = (50, 50))
+        
+        self.play_button = others.Button(x=self.taille_fenetre[0] - 60 , y=10, 
+                                         image_normal="assets\images\Button Kit/16x16 buttons Style 2 menu icons/16x16 Menu Buttons (106).png",
+                                         image_pressed="assets\images\Button Kit/16x16 buttons Style 2 menu icons/16x16 Menu Buttons (105).png", scale = (50, 50))
+        
+        self.quit_button = others.Button(square_x + square_size[0]//2.1, square_y + square_size[1]//2, 
+                                    "assets/images/Button Kit/32x16 buttons Style 1 with symbols/32x16 Button (19).png", 
+                                    "assets/images/Button Kit/32x16 buttons Style 1 with symbols/32x16 Button (18).png")
+        
+        self.resume_button = others.Button(square_x + square_size[0]//4.5, square_y + square_size[1] //4, 
+                                    "assets/images/Button Kit/32x16 buttons Style 1 with symbols/32x16 Button (59).png", 
+                                    "assets/images/Button Kit/32x16 buttons Style 1 with symbols/32x16 Button (58).png")
+        
+        self.info_button = others.Button(square_x + square_size[0]//4.5, square_y + square_size[1]//2, 
+                                    "assets/images/Button Kit/32x16 buttons Style 1 with symbols/32x16 Button (17).png", 
+                                    "assets/images/Button Kit/32x16 buttons Style 1 with symbols/32x16 Button (16).png")
+        
+        self.settings_button = others.Button(square_x + square_size[0]//2.1, square_y + square_size[1] //4,
+                                      "assets/images/Button Kit/32x16 buttons Style 1 with symbols/32x16 Button (61).png",
+                                      "assets/images/Button Kit/32x16 buttons Style 1 with symbols/32x16 Button (60).png")
+
+        
     def pause_menu(self):
         square_size = (1000, 600)
         square_x = self.taille_fenetre[0] // 2 - square_size[0] // 2.25
@@ -364,23 +495,31 @@ class Game:
         surface.fill((0, 0, 0))
         surface.set_alpha(200)
 
-        
-        self.sound_button = others.Button(square_x + square_size[0]//1.1, square_y + 50, 
-                                  "assets\images\Button Kit/16x16 buttons Style 2 menu icons/16x16 Menu Buttons (6).png", 
-                                  "assets\images\Button Kit/16x16 buttons Style 2 menu icons/16x16 Menu Buttons (5).png", (50,50))
-        
-        self.quit_button = others.Button(square_x + square_size[0]//2.75, square_y + square_size[1] - 100, 
-                                  "assets/images/Button Kit/32x16 buttons Style 1 with symbols/32x16 Button (19).png", 
-                                  "assets/images/Button Kit/32x16 buttons Style 1 with symbols/32x16 Button (18).png")
-
-        
-        self.sound_button.rect.x, self.sound_button.rect.y = square_x + square_size[0]//1.1, square_y + 50
-        self.quit_button.rect.x, self.quit_button.rect.y = square_x + square_size[0]//2.75, square_y + square_size[1] - 100
-        
         self.fenetre.blit(surface, (square_x, square_y))
-        self.sound_button.render(self.fenetre)
+        
+        
         self.quit_button.render(self.fenetre)
         
+        self.resume_button.render(self.fenetre)
+
+        
+        self.info_button.render(self.fenetre)
+        
+        if self.is_info_menu_open:
+            self.is_info_menu_open = False
+            self.info_menu()
+        
+        if self.pause_button.state == "pressed":
+            self.play_button.state = "pressed"
+        else:
+            self.play_button.state = "normal"
+            
+        self.play_button.render(self.fenetre)
+        
+        self.settings_button.render(self.fenetre)
+        
+    def info_menu(self):
+        self.menu.info_menu.run()
     
     def render(self):
         # Dessiner sur la fenêtre
@@ -391,7 +530,7 @@ class Game:
                 
         self.render_wave()
         
-        self.pause_button.render(self.fenetre)
+        
         
         # Affichage du "Game Over"
         if self.is_game_over:
@@ -425,11 +564,14 @@ class Game:
         if self.paused:
             self.pause_menu()
             self.render_pause()
+        else:
+            self.pause_button.render(self.fenetre)
         # Mettre à jour l'affichage
         pg.display.flip()
 
 if __name__ == '__main__':
     import menu
-    menu = menu.Menu()
+    menu = menu.StartMenu()
     jeu = Game(menu)
     jeu.run()
+    menu.run()

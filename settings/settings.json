@@ -1,8 +1,18 @@
 {
-    "music volume": 0.5,
-    "sound volume": 0.5,
+    "is_this_first_game": false,
+    "sound_volume": 0.4,
+    "music_volume": 0.5,
+    "is_sound_active": false,
+    "is_music_active": true,
+    "current_music": "menu",
     "difficulty": "normal",
-    "RessourcePack": "default",
-    "bestScore": 0,
-    "lastWave": 0
+    "ressource_pack": "default",
+    "best_score": 3000,
+    "max_wave": 4,
+    "total_wave": 6,
+    "killed_bot": 91,
+    "turrets_built": 259,
+    "turrets_sold": 73,
+    "total_games_played": 50,
+    "total_play_time": 1402
 }

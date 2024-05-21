@@ -251,6 +251,19 @@ class MouseManager:
         self.quit_cond = False
         self.pause_cond = False
         self.sound_cond = False
+        self.music_cond = False
+        
+        self.resume_cond = False
+        self.info_cond = False
+        self.credit_cond = False
+        self.stats_cond = False
+        
+        self.settings_cond = False
+        self.lower_sound_cond = False
+        self.upper_sound_cond = False
+        self.lower_music_cond = False
+        self.upper_music_cond = False
+        
         
         self.mouse_position = pg.mouse.get_pos()
         self.mouse_button_state = None
@@ -265,7 +278,7 @@ class MouseManager:
         self.last_mouse_event = pg.mouse.get_rel()
 
         self.handle_mouse_event()
-        
+
         if self.mouse_button_state[2]:
             self.previous_mouse_selection = None #('matrix', 0, 0)
             self.mouse_selection = None
@@ -303,7 +316,6 @@ class MouseManager:
                 elif self.scene.wave_ended and self.scene.next_wave_button_rect.collidepoint(self.mouse_position):
                     self.previous_mouse_selection = self.mouse_selection
                     self.mouse_selection = ("next_wave_button", None)
-                    print("next wave button : entrée souris")
 
                 else:
                     for i in range(len(self.scene.liste_rect_shop)):
@@ -312,11 +324,11 @@ class MouseManager:
                             self.previous_mouse_selection = self.mouse_selection
                             self.mouse_selection = ("shop", i)
                             return i  # Retourne le mot "shop" et l'index de la tourelle
-            
-            
+
             
             #Si le jeu est en pause et que le clic gauche est appuyé
             else:
+                
                 if self.scene.quit_button.rect.collidepoint(self.mouse_position):
                     self.scene.quit_button.state = "pressed"
                     self.quit_cond = True
@@ -324,20 +336,33 @@ class MouseManager:
                     self.scene.quit_button.state = "normal"
                     self.quit_cond = False
 
-                if self.scene.sound_button.rect.collidepoint(self.mouse_position):
-                    self.scene.sound_button.state = "pressed"
-                    self.sound_cond = True
+                if self.scene.resume_button.rect.collidepoint(self.mouse_position):
+                    self.scene.resume_button.state = "pressed"
+                    self.resume_cond = True
                 else:
-                    self.scene.sound_button.state = "normal"
-                    self.sound_cond = False
-
+                    self.scene.resume_button.state = "normal"
+                    self.resume_cond = False
+                
+                if self.scene.info_button.rect.collidepoint(self.mouse_position):
+                    self.scene.info_button.state = "pressed"
+                    self.info_cond = True
+                else:
+                    self.scene.info_button.state = "normal"
+                    self.info_cond = False
+                
+                if self.scene.settings_button.rect.collidepoint(self.mouse_position):
+                    self.scene.settings_button.state = "pressed"
+                    self.settings_cond = True
+                else:
+                    self.scene.settings_button.state = "normal"
+                    self.settings_cond = False
 
 
         elif not self.mouse_button_state[0]:
             # Action du bouton play
             if self.pause_cond and self.scene.pause_button.rect.collidepoint(self.mouse_position):
                 self.scene.pause_button.state = "normal"
-                self.mouse_selection = "Pause"
+                self.mouse_selection = "pause"
                 self.pause_cond = False
             else:
                 self.scene.pause_button.state = "normal"
@@ -358,16 +383,33 @@ class MouseManager:
                     self.scene.quit_button.state = "normal"
                     self.quit_cond = False
 
-                if self.sound_cond and self.scene.sound_button.rect.collidepoint(self.mouse_position):
-                    self.scene.sound_button.state = "normal"
-                    self.scene.menu.is_sound_active = not self.scene.menu.is_sound_active
-                    print(self.scene.menu.is_sound_active)
-                    self.sound_cond = False
+                
+                if self.resume_cond and self.scene.resume_button.rect.collidepoint(self.mouse_position):
+                    self.scene.resume_button.state = "normal"
+                    self.scene.paused = False
+                    self.resume_cond = False
                 else:
-                    self.scene.sound_button.state = "normal"
-                    self.sound_cond = False
-        
-    def menu_mouse_manager(self):
+                    self.scene.resume_button.state = "normal"
+                    self.resume_cond = False
+                
+                if self.info_cond and self.scene.info_button.rect.collidepoint(self.mouse_position):
+                    self.scene.info_button.state = "normal"
+                    self.scene.is_info_menu_open = True
+                    self.scene.menu.info_menu.switch_to_info()
+                    self.info_cond = False
+                else:
+                    self.scene.info_button.state = "normal"
+                    self.info_cond = False
+
+                if self.settings_cond and self.scene.settings_button.rect.collidepoint(self.mouse_position):
+                    self.scene.settings_button.state = "normal"
+                    self.scene.is_settings_menu_open = True
+                    self.settings_cond = False
+                else:
+                    self.scene.settings_button.state = "normal"
+                    self.settings_cond = False
+
+    def start_menu_mouse_manager(self):
         if self.mouse_button_state[0]:
             # Collision avec le bouton play
             if self.scene.play_button.rect.collidepoint(self.mouse_position):
@@ -384,6 +426,34 @@ class MouseManager:
                 self.quit_cond = False
                 self.scene.quit_button.state = "normal"
 
+            if self.scene.info_button.rect.collidepoint(self.mouse_position):
+                    self.scene.info_button.state = "pressed"
+                    self.info_cond = True
+            else:
+                self.scene.info_button.state = "normal"
+                self.info_cond = False
+            
+            if self.scene.settings_button.rect.collidepoint(self.mouse_position):
+                    self.scene.settings_button.state = "pressed"
+                    self.settings_cond = True
+            else:
+                self.scene.settings_button.state = "normal"
+                self.settings_cond = False
+            
+            if self.scene.credit_button.rect.collidepoint(self.mouse_position):
+                    self.scene.credit_button.state = "pressed"
+                    self.credit_cond = True
+            else:
+                self.scene.credit_button.state = "normal"
+                self.credit_cond = False
+
+            if self.scene.stats_button.rect.collidepoint(self.mouse_position):
+                    self.scene.stats_button.state = "pressed"
+                    self.stats_cond = True
+            else:
+                self.scene.stats_button.state = "normal"
+                self.stats_cond = False
+                
         elif not self.mouse_button_state[0]:
             # Action du bouton play
             if self.play_cond and self.scene.play_button.rect.collidepoint(self.mouse_position):
@@ -398,14 +468,210 @@ class MouseManager:
             else:
                 self.quit_cond = False
                 self.scene.quit_button.state = "normal"
+
+            if self.info_cond and self.scene.info_button.rect.collidepoint(self.mouse_position):
+                    self.scene.info_button.state = "normal"
+                    self.scene.is_info_menu_open = True
+                    self.scene.info_menu.switch_to_info()
+                    self.info_cond = False
+            else:
+                self.scene.info_button.state = "normal"
+                self.info_cond = False
+
+            if self.settings_cond and self.scene.settings_button.rect.collidepoint(self.mouse_position):
+                    self.scene.settings_button.state = "normal"
+                    self.scene.is_settings_menu_open = True
+                    self.settings_cond = False
+            else:
+                self.scene.settings_button.state = "normal"
+                self.settings_cond = False
+            
+            if self.credit_cond and self.scene.credit_button.rect.collidepoint(self.mouse_position):
+                    self.scene.credit_button.state = "normal"
+                    self.scene.is_info_menu_open = True
+                    self.scene.info_menu.switch_to_credit()
+                    self.credit_cond = False
+            else:
+                self.scene.credit_button.state = "normal"
+                self.credit_cond = False
+            
+            if self.stats_cond and self.scene.stats_button.rect.collidepoint(self.mouse_position):
+                    self.scene.stats_button.state = "normal"
+                    self.scene.info_menu.switch_to_stats()
+                    self.scene.is_info_menu_open = True
+                    self.stats_cond = False
+            else:
+                self.scene.stats_button.state = "normal"
+                self.stats_cond = False
+                
+    def info_menu_mouse_manager(self):
+        if self.mouse_button_state[0]:
+            # Collision avec le bouton play
+            if self.scene.quit_button.rect.collidepoint(self.mouse_position):
+                self.quit_cond = True
+                self.scene.quit_button.state = "pressed"
+            else:
+                self.quit_cond = False
+                self.scene.quit_button.state = "normal"
+
+            if self.scene.state == "credit" and self.scene.scroll_speed_button.rect.collidepoint(self.mouse_position) and self.scene.is_scroll_speed_button_active:
+                self.scene.scroll_speed = 1.5
+                self.scene.scroll_speed_button.state = "pressed"
+
+            else:
+                self.scene.scroll_speed = 0.5
+                self.scene.scroll_speed_button.state = "normal"
+            
+
+        elif not self.mouse_button_state[0]:
+            # Action du bouton quit
+            if self.quit_cond and self.scene.quit_button.rect.collidepoint(self.mouse_position):
+                self.scene.quit_interface()
+                self.quit_cond = False
+            else:
+                self.quit_cond = False
+                self.scene.quit_button.state = "normal"
+
+            if self.scene.state == "credit":
+                self.scene.scroll_speed = 0.5
+                self.scene.scroll_speed_button.state = "normal"
+
     
+    def settings_menu_mouse_manager(self):
+        if self.mouse_button_state[0]:
+            if self.scene.quit_button.rect.collidepoint(self.mouse_position):
+                self.quit_cond = True
+                self.scene.quit_button.state = "pressed"
+            else:
+                self.quit_cond = False
+                self.scene.quit_button.state = "normal"
+
+            if self.scene.mute_sound_button.rect.collidepoint(self.mouse_position):
+                self.scene.mute_sound_button.state = "pressed"
+                self.scene.demute_sound_button.state = "pressed"
+                self.sound_cond = True
+            else:
+                self.scene.mute_sound_button.state = "normal"
+                self.scene.demute_sound_button.state = "normal"
+                self.sound_cond = False
+
+            
+            # lower and upper sound button
+            if self.scene.lower_sound_button.rect.collidepoint(self.mouse_position):
+                self.scene.lower_sound_button.state = "pressed"
+                self.lower_sound_cond = True
+            else:
+                self.scene.lower_sound_button.state = "normal"
+                self.lower_sound_cond = False
+            
+            if self.scene.upper_sound_button.rect.collidepoint(self.mouse_position):
+                self.scene.upper_sound_button.state = "pressed"
+                self.upper_sound_cond = True
+            else:
+                self.scene.upper_sound_button.state = "normal"
+                self.upper_sound_cond = False
+
+            #lower and upper music button
+            
+            if self.scene.lower_music_button.rect.collidepoint(self.mouse_position):
+                self.scene.lower_music_button.state = "pressed"
+                self.lower_music_cond = True
+            else:
+                self.scene.lower_music_button.state = "normal"
+                self.lower_music_cond = False
+            
+            if self.scene.upper_music_button.rect.collidepoint(self.mouse_position):
+                self.scene.upper_music_button.state = "pressed"
+                self.upper_music_cond = True
+            else:
+                self.scene.upper_music_button.state = "normal"
+                self.upper_music_cond = False
+            
+            if self.scene.mute_music_button.rect.collidepoint(self.mouse_position):
+                self.scene.mute_music_button.state = "pressed"
+                self.scene.demute_music_button.state = "pressed"
+                self.music_cond = True
+            else:
+                self.scene.mute_music_button.state = "normal"
+                self.scene.demute_music_button.state = "normal"
+                self.music_cond = False
+                
+        elif not self.mouse_button_state[0]:
+            if self.quit_cond and self.scene.quit_button.rect.collidepoint(self.mouse_position):
+                self.scene.quit_interface()
+                self.quit_cond = False
+            else:
+                self.quit_cond = False
+                self.scene.quit_button.state = "normal"
+
+            if self.sound_cond and self.scene.mute_sound_button.rect.collidepoint(self.mouse_position):
+                self.scene.mute_sound_button.state = "normal"
+                self.scene.demute_sound_button.state = "normal"
+                self.scene.file_manager.set_setting("is_sound_active", not self.scene.file_manager.get_setting("is_sound_active"))
+                self.sound_cond = False
+            else:
+                self.scene.mute_sound_button.state = "normal"
+                self.scene.demute_sound_button.state = "normal"
+                self.sound_cond = False
+
+            # lower and upper sound button
+            if self.lower_sound_cond and self.scene.lower_sound_button.rect.collidepoint(self.mouse_position):
+                self.scene.lower_sound_button.state = "normal"
+                self.scene.sound_volume_down()
+                self.lower_sound_cond = False
+            else:
+                self.lower_sound_cond = False
+                self.scene.lower_sound_button.state = "normal"
+            
+            if self.upper_sound_cond and self.scene.upper_sound_button.rect.collidepoint(self.mouse_position):
+                self.scene.upper_sound_button.state = "normal"
+                self.upper_sound_cond = False
+                self.scene.sound_volume_up()
+            else:
+                self.upper_sound_cond = False
+                self.scene.upper_sound_button.state = "normal"
+                
+            # lower and upper music button
+            if self.lower_music_cond and self.scene.lower_music_button.rect.collidepoint(self.mouse_position):
+                self.scene.lower_music_button.state = "normal"
+                self.scene.music_volume_down()
+                self.lower_music_cond = False
+            else:
+                self.lower_music_cond = False
+                self.scene.lower_music_button.state = "normal"
+            
+            if self.upper_music_cond and self.scene.upper_music_button.rect.collidepoint(self.mouse_position):
+                self.scene.upper_music_button.state = "normal"
+                self.upper_music_cond = False
+                self.scene.music_volume_up()
+            else:
+                self.upper_music_cond = False
+                self.scene.upper_music_button.state = "normal"
+            
+            if self.music_cond and self.scene.mute_music_button.rect.collidepoint(self.mouse_position):
+                self.scene.mute_music_button.state = "normal"
+                self.scene.demute_music_button.state = "normal"
+                
+                self.scene.file_manager.set_setting("is_music_active", not self.scene.file_manager.get_setting("is_music_active"))
+                self.music_cond = False
+            else:
+                self.scene.mute_music_button.state = "normal"
+                self.scene.demute_music_button.state = "normal"
+                self.music_cond = False
+            
     def handle_mouse_event(self):
         if self.scene_name == "game":
             self.game_mouse_manager()
             
-        elif self.scene_name == "menu":
-            self.menu_mouse_manager()
+        elif self.scene_name == "start_menu":
+            self.start_menu_mouse_manager()
+
+        elif self.scene_name == "info_menu":
+            self.info_menu_mouse_manager()
         
+        elif self.scene_name == "settings_menu":
+            self.settings_menu_mouse_manager()
+
     def previous_selection_on_mouse(self):
         self.mouse_position = pg.mouse.get_pos()
         
@@ -446,8 +712,8 @@ class Button:
         self.image_pressed = pg.image.load(image_pressed)
 
         # Redimensionner les images
-        self.image_normal = pg.transform.scale(self.image_normal, scale)
-        self.image_pressed = pg.transform.scale(self.image_pressed, scale)
+        self.image_normal = pg.transform.scale(self.image_normal, scale).convert_alpha()
+        self.image_pressed = pg.transform.scale(self.image_pressed, scale).convert_alpha()
 
         # Créer le rectangle du bouton
         self.rect = self.image_normal.get_rect()
@@ -506,5 +772,5 @@ class FileManager:
 if __name__ == '__main__':
     import menu
     import game
-    menu1 = menu.Menu()
+    menu1 = menu.StartMenu()
     menu1.run()

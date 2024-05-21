@@ -2,6 +2,7 @@ import pygame as pg
 import time
 import math
 import enemy
+import others
 from random import randint, random
 from abc import ABC, abstractmethod
 from pygame import BLEND_RGB_ADD
@@ -9,6 +10,9 @@ from pygame import BLEND_RGB_ADD
 
 class Turret_selection:
     def __new__(cls, jeu, x, y, name):
+        file_manager = others.FileManager("settings/settings.json")
+        file_manager.set_setting("turrets_built", file_manager.get_setting("turrets_built") + 1)
+        
         if name == "Basic Turret":
             return Basic_Turret(jeu, x, y)
         
