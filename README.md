@@ -2,14 +2,12 @@ TechTurret Tactic - TTT
 
 ---------------
 
-Version 0.8
+Version 0.8.1
 
 
     - Nouveauté :
 
-        - The 4 new musics
-
-        - Menus / Stats / Settings / Infos / Pause_Menu
+        - Add credits a the end of the boss + fade out and fade in for the credit music
 
 
 ----------------

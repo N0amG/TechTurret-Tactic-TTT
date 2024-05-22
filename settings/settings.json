@@ -8,11 +8,11 @@
     "difficulty": "normal",
     "ressource_pack": "default",
     "best_score": 3000,
-    "max_wave": 4,
-    "total_wave": 6,
-    "killed_bot": 91,
-    "turrets_built": 259,
-    "turrets_sold": 73,
-    "total_games_played": 50,
-    "total_play_time": 1402
+    "max_wave": 11,
+    "total_wave": 7,
+    "killed_bot": 127,
+    "turrets_built": 412,
+    "turrets_sold": 92,
+    "total_games_played": 94,
+    "total_play_time": 3379
 }

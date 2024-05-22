@@ -3,6 +3,7 @@ import sys
 
 import game
 import others
+import time
 
 class StartMenu:
     
@@ -302,7 +303,7 @@ class InfoMenu:
         # Remplissez cette surface avec du noir
         self.logo_background.fill((0, 0, 0))
         
-        pg.draw.rect(self.fenetre, (50,50,50), (0, 0, self.fenetre.get_width(), self.fenetre.get_height()//5))
+        pg.draw.rect(self.fenetre, (0,0,0), (0, 0, self.fenetre.get_width(), self.fenetre.get_height()//5))
 
         self.fenetre.blit(self.logo_background,(self.taille_fenetre[0]//2.5 - self.logo_text.get_width()//4, 35))
         self.fenetre.blit(self.logo_frame, (self.taille_fenetre[0]//2.5 - self.logo_text.get_width()//4 - 35, 20))
@@ -429,11 +430,35 @@ class InfoMenu:
     def switch_to_info(self):
         self.state = "info"
     
+    def credit_music_init(self):
+        pg.mixer.music.load("assets/musics/credits.ogg")
+        self.file_manager.set_setting('current_music', "credits")
+
+        self.credit_music_start = time.time()
+        pg.mixer.music.set_volume(0)
+        
+        pg.mixer.music.play()            
+    
+    def credit_music(self):
+        if self.file_manager.get_setting('current_music') != "credits":
+            return self.credit_music_init()
+        else:
+            if not self.file_manager.get_setting('is_music_active'):
+                pg.mixer.music.set_volume(0)
+            else:
+                if time.time() - self.credit_music_start < 3:
+                    volume = (time.time() - self.credit_music_start)/2 / 3
+                    volume = max(0.0, min(self.file_manager.get_setting('music_volume'), volume))
+                    pg.mixer.music.set_volume(volume)
+                else :
+                    pg.mixer.music.set_volume(self.file_manager.get_setting('music_volume'))
+                
     def switch_to_credit(self):
         self.state = "credit"
         self.scroll_pos = self.fenetre.get_height()
         self.scroll_speed = 0.5
         self.is_scroll_speed_button_active = True
+        self.credit_music_init()
     
     def credit_button_render(self):
         # Dessiner le bouton
@@ -506,7 +531,7 @@ class InfoMenu:
             font = pg.font.Font("assets/fonts/Peaberry-Font-v2.0/Peaberry-Font-v2.0/Peaberry Font Family/Peaberry Monospace/PeaberryMono.ttf", 40)
             self.sub_text = font.render("Statistics :", True, (255, 255, 255))
             
-            pg.draw.rect(self.fenetre, (50,50,50), (self.sub_text.get_rect().x , 130, self.fenetre.get_width(), 40))
+            pg.draw.rect(self.fenetre, (0,0,0), (self.sub_text.get_rect().x , 130, self.fenetre.get_width(), 40))
             self.fenetre.blit(self.sub_text, (self.taille_fenetre[0]//2.2 - self.sub_text.get_width()//4, 130))
 
     
@@ -520,7 +545,7 @@ class InfoMenu:
 
     
     def render(self):
-        self.fenetre.fill((50,50,50))
+        self.fenetre.fill((0,0,0))
         
         if self.state == "info":
             self.info_text_render()
@@ -529,10 +554,12 @@ class InfoMenu:
         elif self.state == "stats":
             self.stats_text_render()
             self.quit_button.render(self.fenetre)
+        
         else:
             self.credit_text_render()
             self.credit_button_render()
-            
+            self.credit_music()
+                        
         pg.display.flip()
 
 class SettingsMenu:

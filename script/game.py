@@ -87,7 +87,7 @@ class Game:
         self.is_game_over = False
         self.is_player_win = False
         
-        
+        self.win_timer = None
         # Mise en place du shop
         # Kama = monnaie du jeu
         self.kamas = 300_000 # start a 300 ?
@@ -107,7 +107,7 @@ class Game:
         self.kamas_surface = None
         
         # Gérer les vagues d'ennemis
-        self.wave = 1
+        self.wave = 10
         
         self.file_manager.set_setting("total_games_played", self.file_manager.get_setting("total_games_played")+1)
         
@@ -120,7 +120,7 @@ class Game:
         #test et placement des éléments    
         #[[self.game_entities_list.append(turret.Turret_selection(self ,self.matrice_tourelle[j][i][1], self.matrice_tourelle[j][i][0], "Omni Turret")) for i in range(0,8)] for j in range(0,5)]
         #[[self.game_entities_list.append(turret.Turret_selection(self ,self.matrice_tourelle[j][i][1], self.matrice_tourelle[j][i][0], "Plasma Turret")) for i in range(7,8)] for j in range(0,5)]
-        #self.game_entities_list.append(turret.Turret_selection(self ,self.matrice_tourelle[2][1][1], self.matrice_tourelle[2][1][0], "BlackHole Turret"))
+        self.game_entities_list.append(turret.Turret_selection(self ,self.matrice_tourelle[2][1][1], self.matrice_tourelle[2][1][0], "Shield"))
         
         #self.bot_wave_spawner.manual_spawn(self.matrice_bot[1][1][1], self.matrice_bot[1][1][0], "incinerator")
         
@@ -229,7 +229,6 @@ class Game:
 
     def update(self):
         if not self.is_game_over and not self.paused:
-            
             self.kama_loot()
                       
             # Réapparition manuel chronométré d'un bot pour débuggage et test
@@ -269,10 +268,20 @@ class Game:
                 self.bot_wave_spawner.update()
             
             else:
-                if self.bot_wave_spawner.boss_wave == self.wave:
+                if self.bot_wave_spawner.boss_wave == self.wave and self.is_player_win == False:
                     self.is_player_win = True
                     self.is_game_over = True
-    
+                    self.win_timer = time.time()
+
+        if self.is_player_win and time.time() - self.win_timer < 5:
+            pg.mixer.music.fadeout(5000)
+        elif self.is_player_win and time.time() - self.win_timer >= 5 and not self.quit:
+            self.quit = True
+            self.menu.info_menu.switch_to_credit()
+            self.info_menu()
+            self.menu.is_settings_menu_open = False
+
+                    
     def first_music_init(self):
         pg.mixer.music.load("assets/musics/first_part.ogg")
         self.file_manager.set_setting("current_music", "first_part")

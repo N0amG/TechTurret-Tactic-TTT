@@ -812,7 +812,7 @@ class StealthBlack_Bot(Bot):
 
 class TITAN_Boss(Bot):
     def __init__(self, jeu, x, y, id):
-        super().__init__(jeu, x, y, id, vie = 5000, point = 2500,degats=0, vitesse= 0.25, portee = 0, cadence = 5, path ="enemy/titan/titan_moving_frames/frame_", nb_images=4, coef = (160*5, 96*5), name="TITAN_Boss", fps= 45)
+        super().__init__(jeu, x, y, id, vie = 0, point = 2500,degats=0, vitesse= 0.25, portee = 0, cadence = 5, path ="enemy/titan/titan_moving_frames/frame_", nb_images=4, coef = (160*5, 96*5), name="TITAN_Boss", fps= 45)
 
         self.state_list = ["moving", "standing" , "attack_1", "attack_2",
                            "shield", "death_beam", "damaged", "death"]
